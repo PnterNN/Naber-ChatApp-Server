@@ -1,16 +1,18 @@
-﻿using System.Net.Sockets;
+﻿using System.IO;
+using System.Net.Sockets;
 using System.Text;
-using System.IO;
 
 namespace JavaProject___Server.NET.IO
 {
-    internal class PacketReader
+    internal class PacketReader : BinaryReader
     {
         private NetworkStream _ns;
         public PacketReader(NetworkStream ns) : base(ns)
         {
             _ns = ns;
         }
+
+        //Paketin mesajını okuyor
         public string ReadMessage()
         {
             byte[] msgBuffer;

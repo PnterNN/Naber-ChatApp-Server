@@ -15,17 +15,19 @@ namespace JavaProject___Server.NET.IO
             _ms = new MemoryStream();
         }
 
+        //Paketin ne tür olduğunu belirliyor
         public void WriteOpCode(byte opcode)
         {
             _ms.WriteByte(opcode);
         }
+
+        //Paketin içindeki mesajı yazıyor
         public void WriteMessage(string msg)
         {
             byte[] buff = BitConverter.GetBytes(msg.Length);
             _ms.Write(buff, 0, buff.Length);
             _ms.Write(Encoding.ASCII.GetBytes(msg), 0, msg.Length);
         }
-
 
         public byte[] GetPacketBytes()
         {
