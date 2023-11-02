@@ -41,6 +41,7 @@ namespace JavaProject___Server
                 while (true)
                 {
                     var client = new Client(_listener.AcceptTcpClient());
+                    
                     _users.Add(client);
                     BroadcastConnection(client);
                 }
@@ -126,5 +127,65 @@ namespace JavaProject___Server
                 }
             }
         }
+
+        //Client farklı bir cliente mesaj paketi gönderdiğinde bu fonksiyon çalışıyor
+        public static void SendMessageToUser(string msg, string user1UID, string user2UID)
+        {
+            foreach (var u in _users)
+            {
+                if (u.UID.ToString() == user1UID.ToString())
+                {
+                    var packet = new PacketBuilder();
+                    packet.WriteOpCode(5);
+                    packet.WriteMessage(msg);
+                    packet.WriteMessage(_users.Where(x => x.UID.ToString() == user2UID).FirstOrDefault().Username);
+                    packet.WriteMessage(user2UID);
+                    u.ClientSocket.Client.Send(packet.GetPacketBytes());
+                }
+            }
+        }
+        //Client bir gruba mesaj paketi gönderdiğinde bu fonksiyon çalışıyor
+        public static void SendMessageToGroup(string msg, string userUID, string groupUID)
+        {
+            var packet = new PacketBuilder();
+            packet.WriteOpCode(5);
+            packet.WriteMessage(msg);
+            packet.WriteMessage(_users.Where(x => x.UID.ToString() == groupUID).FirstOrDefault().Username);
+            packet.WriteMessage(userUID);
+            List<string> uids = userUID.Split(' ').ToList();
+            foreach (string id in uids)
+            {
+                try
+                {
+                    _users.Where(x => x.UID.ToString() == id).FirstOrDefault().ClientSocket.Client.Send(packet.GetPacketBytes());
+                }
+                catch
+                {
+
+                }
+            }
+        }
+
+
+        //Client grup açma paketini yolladığında bu kod çalışıyor
+        public static void CreateGroup(string groupName, List<Client> clients)
+        {
+
+            string ids = "";
+            foreach (Client client in clients)
+            {
+                ids += client.UID.ToString() + " ";
+            }
+            ids = ids.TrimEnd(' ');
+            var packet = new PacketBuilder();
+            packet.WriteOpCode(2);
+            packet.WriteMessage(groupName);
+            packet.WriteMessage(ids);
+            foreach (Client client1 in clients)
+            {
+                client1.ClientSocket.Client.Send(packet.GetPacketBytes());
+            }
+        }
+
     }
 }

@@ -2,6 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,7 +16,10 @@ namespace JavaProject___Server
         public string Username { get; set; }
         public string Email { get; set; }
         public string Password { get; set; }
+        public string IPAdress { get; set; }
         public Guid UID { get; set; }
+
+
         public TcpClient ClientSocket { get; set; }
 
         PacketReader _packetReader;
@@ -31,9 +36,10 @@ namespace JavaProject___Server
             _packetReader = new PacketReader(ClientSocket.GetStream());
             try
             {
+                IPAdress = ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString();
                 var opcode = _packetReader.ReadByte();
-                Username = _packetReader.ReadMessage();
-                Console.WriteLine("[" + DateTime.Now + "]: Client has connected with the username: " + Username);
+                Username = _packetReader.ReadMessage(); 
+                Console.WriteLine("[" + DateTime.Now + "]: " + Username + "[/" + IPAdress + "] has connected" );
                 Task.Run(() => Procces());
             }
             catch
@@ -66,7 +72,7 @@ namespace JavaProject___Server
                 catch
                 {
                     //Eğer Client Programı kapatırsa ve ya interneti giderse sunucu kullanıcının bilgilerini siliyor
-                    Console.WriteLine("[" + DateTime.Now + "]: " + Username + " has disconnected.");
+                    Console.WriteLine("[" + DateTime.Now + "]: " + Username + "[/" + IPAdress + "] has disconnected.");
                     Program.BroadcastDisconnect(UID.ToString());
                     ClientSocket.Close();
                     break;
