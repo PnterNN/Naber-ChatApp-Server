@@ -91,9 +91,6 @@ namespace JavaProject___Server
             }
         }
 
-
-
-
         //Client bağlandığında diğer clientlere bağlandığını bildiriyor
         static void BroadcastConnection(Client client)
         {
@@ -112,7 +109,6 @@ namespace JavaProject___Server
                 }
             }
         }
-
 
         //Client Çıkış yaptığında bu fonksiyon çalışıyor
         public static void BroadcastDisconnect(string uid)
