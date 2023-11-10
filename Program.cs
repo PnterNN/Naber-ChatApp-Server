@@ -46,8 +46,39 @@ namespace JavaProject___Server
                     BroadcastConnection(client);
                 }
             });
-
-
+            //konsolda yetkili komutları kullanmak için
+            _ = Task.Run(() =>
+            {
+                while (true)
+                {
+                    var input = Console.ReadLine();
+                    if (input == "/exit")
+                    {
+                        Environment.Exit(0);
+                    }
+                    else if ( input == "/users")
+                    {
+                        foreach (var user in _users)
+                        {
+                            Console.WriteLine(user.Username + "[/"+ user.IPAdress +"] named user uid is " + user.UID);
+                        }
+                    }
+                    else if (input == "/clear")
+                    {
+                        Console.Clear();
+                    }
+                    else if (input == "/help")
+                    {
+                        Console.WriteLine("/exit - exit server");
+                        Console.WriteLine("/users - show connected users");
+                        Console.WriteLine("/clear - clear console");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Unknown command");
+                    }
+                }
+            }); 
 
             //Burda Restfull api sunucuyu başlatıyoruz 8000 portunu kullanıyor
             _httpListener = new HttpListener();
