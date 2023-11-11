@@ -41,9 +41,7 @@ namespace JavaProject___Server
                 while (true)
                 {
                     var client = new Client(_listener.AcceptTcpClient());
-                    
                     _users.Add(client);
-                    BroadcastConnection(client);
                 }
             });
             //konsolda yetkili komutları kullanmak için
@@ -123,99 +121,20 @@ namespace JavaProject___Server
             }
         }
 
-        //Client bağlandığında diğer clientlere bağlandığını bildiriyor
-        static void BroadcastConnection(Client client)
-        {
-            foreach (var user in _users)
-            {
-                foreach (var u in _users)
-                {
-                    if (user.UID != u.UID)
-                    {
-                        var packet = new PacketBuilder();
-                        packet.WriteOpCode(1);
-                        packet.WriteMessage(user.Username);
-                        packet.WriteMessage(user.UID.ToString());
-                        u.ClientSocket.Client.Send(packet.GetPacketBytes());
-                    }
-                }
-            }
-        }
-
-        //Client Çıkış yaptığında bu fonksiyon çalışıyor
-        public static void BroadcastDisconnect(string uid)
-        {
-            var disconnectedUser = _users.Where(x => x.UID.ToString() == uid).FirstOrDefault();
-            if (disconnectedUser != null)
-            {
-                _users.Remove(disconnectedUser);
-                var packet = new PacketBuilder();
-                packet.WriteOpCode(10);
-                packet.WriteMessage(uid);
-                foreach (var u in _users)
-                {
-                    u.ClientSocket.Client.Send(packet.GetPacketBytes());
-                }
-            }
-        }
-
-        //Client farklı bir cliente mesaj paketi gönderdiğinde bu fonksiyon çalışıyor
-        public static void SendMessageToUser(string msg, string user1UID, string user2UID)
-        {
-            foreach (var u in _users)
-            {
-                if (u.UID.ToString() == user1UID.ToString())
-                {
-                    var packet = new PacketBuilder();
-                    packet.WriteOpCode(5);
-                    packet.WriteMessage(msg);
-                    packet.WriteMessage(_users.Where(x => x.UID.ToString() == user2UID).FirstOrDefault().Username);
-                    packet.WriteMessage(user2UID);
-                    u.ClientSocket.Client.Send(packet.GetPacketBytes());
-                }
-            }
-        }
-        //Client bir gruba mesaj paketi gönderdiğinde bu fonksiyon çalışıyor
-        public static void SendMessageToGroup(string msg, string userUID, string groupUID)
+        public static void SendRegisterInfo(Client client, bool state)
         {
             var packet = new PacketBuilder();
-            packet.WriteOpCode(5);
-            packet.WriteMessage(msg);
-            packet.WriteMessage(_users.Where(x => x.UID.ToString() == groupUID).FirstOrDefault().Username);
-            packet.WriteMessage(userUID);
-            List<string> uids = userUID.Split(' ').ToList();
-            foreach (string id in uids)
-            {
-                try
-                {
-                    _users.Where(x => x.UID.ToString() == id).FirstOrDefault().ClientSocket.Client.Send(packet.GetPacketBytes());
-                }
-                catch
-                {
-
-                }
-            }
+            packet.WriteOpCode(0);
+            packet.WriteMessage(state.ToString());
+            client.ClientSocket.Client.Send(packet.GetPacketBytes());
         }
 
-
-        //Client grup açma paketini yolladığında bu kod çalışıyor
-        public static void CreateGroup(string groupName, List<Client> clients)
+        public static void SendLoginInfo(Client client, bool state)
         {
-
-            string ids = "";
-            foreach (Client client in clients)
-            {
-                ids += client.UID.ToString() + " ";
-            }
-            ids = ids.TrimEnd(' ');
             var packet = new PacketBuilder();
-            packet.WriteOpCode(2);
-            packet.WriteMessage(groupName);
-            packet.WriteMessage(ids);
-            foreach (Client client1 in clients)
-            {
-                client1.ClientSocket.Client.Send(packet.GetPacketBytes());
-            }
+            packet.WriteOpCode(1);
+            packet.WriteMessage(state.ToString());
+            client.ClientSocket.Client.Send(packet.GetPacketBytes());
         }
 
     }
