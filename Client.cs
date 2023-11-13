@@ -45,50 +45,56 @@ namespace JavaProject___Server
                 while (!status)
                 {
                     var opcode = _packetReader.ReadByte();
-                    if (opcode == 0)
+                    switch (opcode)
                     {
-                        //Register Kısmı
-                        Username = _packetReader.ReadMessage();
-                        Email = _packetReader.ReadMessage();
-                        Password = _packetReader.ReadMessage();
-                        Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user tried to sign up, checking information...");
-                        if (sql.CheckRegisterUser(Username, Email))
-                        {
-                            Program.SendRegisterInfo(this, false);
-                            Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user already registered, username: " + Username);
-                        }
-                        else
-                        {
-                            UID = Guid.NewGuid().ToString();
-                            Program.sendInfoToClient(this, Username, UID);
-                            Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user registered, username: " + Username);
-                            sql.InsertUser(Username, UID, Email, Password);
-                            status = true;
-                            Program.SendRegisterInfo(this, true);
-                            Task.Run(() => Procces());
-                        }
-                    }
-                    else if (opcode == 1)
-                    {
-                        Email = _packetReader.ReadMessage();
-                        Password = _packetReader.ReadMessage();
-                        Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user tried to sign in, checking information...");
-                        if (sql.CheckLoginUser(Email, Password))
-                        {
-                            
-                            Username = sql.getName(Email);
-                            UID = sql.getUID(Email);
-                            Program.sendInfoToClient(this, Username, UID);
-                            Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user logged in, username: " + this.Username);
-                            status = true;
-                            Program.SendLoginInfo(this, true);
-                            Task.Run(() => Procces());
-                        }
-                        else
-                        {
-                            Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user unknown account: " + Email);
-                            Program.SendLoginInfo(this, false);
-                        }
+                        //opcode 0 ise kullanıcı kayıt oluyor
+                        case 0:
+                            Username = _packetReader.ReadMessage();
+                            Email = _packetReader.ReadMessage();
+                            Password = _packetReader.ReadMessage();
+                            Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user tried to sign up, checking information...");
+                            if (sql.CheckRegisterUser(Username, Email))
+                            {
+                                Program.SendRegisterInfo(this, false);
+                                Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user already registered, username: " + Username);
+                            }
+                            else
+                            {
+                                UID = Guid.NewGuid().ToString();
+                                Program.sendInfoToClient(this, Username, UID);
+                                Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user registered, username: " + Username);
+                                sql.InsertUser(Username, UID, Email, Password);
+                                status = true;
+                                Program.SendRegisterInfo(this, true);
+                                Task.Run(() => Procces());
+                            }
+                            break;
+                        //opcode 1 ise kullanıcı giriş yapıyor
+                        case 1:
+                            Email = _packetReader.ReadMessage();
+                            Password = _packetReader.ReadMessage();
+                            Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user tried to sign in, checking information...");
+                            if (sql.CheckLoginUser(Email, Password))
+                            {
+
+                                Username = sql.getName(Email);
+                                UID = sql.getUID(Email);
+                                Program.sendInfoToClient(this, Username, UID);
+                                Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user logged in, username: " + this.Username);
+                                status = true;
+                                Program.SendLoginInfo(this, true);
+                                Task.Run(() => Procces());
+                            }
+                            else
+                            {
+                                Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user unknown account: " + Email);
+                                Program.SendLoginInfo(this, false);
+                            }
+                            break;
+                        //opcode yanlış ise bu hatayı veriyor konsola yazdırıyor
+                        default:
+                            Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user unknown opcode: " + opcode);
+                            break;
                     }
                 }
             }
@@ -123,7 +129,7 @@ namespace JavaProject___Server
                 {
                     //Eğer Client Programı kapatırsa ve ya interneti giderse sunucu kullanıcının bilgilerini siliyor
                     Console.WriteLine("[" + DateTime.Now + "]: " + Username + "[/" + IPAdress + "] has disconnected.");
-                    Program._users.Remove(this);
+                    Program.BroadcastDisconnect(this);
                     ClientSocket.Close();
                     break;
                 }
