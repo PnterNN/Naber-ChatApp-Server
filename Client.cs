@@ -13,7 +13,7 @@ using JavaProject___Server.NET.SQL;
 namespace JavaProject___Server
 {
 
-    internal class Client
+    public class Client
     {
         public string Username { get; set; }
         public string Email { get; set; }
@@ -67,6 +67,7 @@ namespace JavaProject___Server
                                 status = true;
                                 Program.SendRegisterInfo(this, true);
                                 Task.Run(() => Procces());
+                                sql.createUserStorage(this);
                             }
                             break;
                         //opcode 1 ise kullanıcı giriş yapıyor
