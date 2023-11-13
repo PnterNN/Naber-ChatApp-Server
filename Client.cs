@@ -123,6 +123,7 @@ namespace JavaProject___Server
                 {
                     //Eğer Client Programı kapatırsa ve ya interneti giderse sunucu kullanıcının bilgilerini siliyor
                     Console.WriteLine("[" + DateTime.Now + "]: " + Username + "[/" + IPAdress + "] has disconnected.");
+                    Program._users.Remove(this);
                     ClientSocket.Close();
                     break;
                 }

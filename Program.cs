@@ -60,7 +60,7 @@ namespace JavaProject___Server
                     {
                         foreach (var user in _users)
                         {
-                            Console.WriteLine(user.Username + "[/"+ user.IPAdress +"] named user uid is " + user.UID);
+                            Console.WriteLine("[" + DateTime.Now + "]: "+ user.Username + "[/"+ user.IPAdress +"] named user uid is " + user.UID);
                         }
                     }
                     else if (input == "/clear")
@@ -69,13 +69,13 @@ namespace JavaProject___Server
                     }
                     else if (input == "/help")
                     {
-                        Console.WriteLine("/exit - exit server");
-                        Console.WriteLine("/users - show connected users");
-                        Console.WriteLine("/clear - clear console");
+                        Console.WriteLine("[" + DateTime.Now + "]: /exit - exit server");
+                        Console.WriteLine("[" + DateTime.Now + "]: /users - show connected users");
+                        Console.WriteLine("[" + DateTime.Now + "]: /clear - clear console");
                     }
                     else
                     {
-                        Console.WriteLine("Unknown command");
+                        Console.WriteLine("[" + DateTime.Now + "]: Unknown command");
                     }
                 }
             }); 
