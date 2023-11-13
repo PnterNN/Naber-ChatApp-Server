@@ -12,7 +12,7 @@ namespace JavaProject___Server.NET.SQL
         private readonly string _connectionString;
         public MySqlDataBase()
         {
-            _connectionString = "Server=46.31.77.173,3306;Database=javaproject;Uid=JavaProject;Pwd=JavaProject_ICU;";
+            _connectionString = "@INFO";
         }
         protected MySqlConnection GetConnection()
         {

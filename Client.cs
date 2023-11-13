@@ -15,7 +15,6 @@ namespace JavaProject___Server
 
     internal class Client
     {
-        private readonly string _connectionString = "Server=127.0.0.1,3306;Database=javaproject;Uid=JavaProject;Pwd=JavaProject_ICU;";
         public string Username { get; set; }
         public string Email { get; set; }
         public string Password { get; set; }
@@ -60,11 +59,12 @@ namespace JavaProject___Server
                         }
                         else
                         {
-                            Program.SendRegisterInfo(this, true);
                             UID = Guid.NewGuid().ToString();
+                            Program.sendInfoToClient(this, Username, UID);
                             Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user registered, username: " + Username);
                             sql.InsertUser(Username, UID, Email, Password);
                             status = true;
+                            Program.SendRegisterInfo(this, true);
                             Task.Run(() => Procces());
                         }
                     }
@@ -75,19 +75,19 @@ namespace JavaProject___Server
                         Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user tried to sign in, checking information...");
                         if (sql.CheckLoginUser(Email, Password))
                         {
+                            
                             Username = sql.getName(Email);
                             UID = sql.getUID(Email);
-                            Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user logged in, username: " + Username);
-                            Program.SendLoginInfo(this, true);
-                            
+                            Program.sendInfoToClient(this, Username, UID);
+                            Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user logged in, username: " + this.Username);
                             status = true;
+                            Program.SendLoginInfo(this, true);
                             Task.Run(() => Procces());
                         }
                         else
                         {
                             Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user unknown account: " + Email);
                             Program.SendLoginInfo(this, false);
-                            
                         }
                     }
                 }
@@ -102,6 +102,7 @@ namespace JavaProject___Server
         //Clientin paketlerini okuyor
         void Procces()
         {
+            
             while (true)
             {
                 try
@@ -110,7 +111,6 @@ namespace JavaProject___Server
                     switch (opcode)
                     {
                         //Buraya opcode switch case ile paketleri okucaz
-
 
 
                         //Eğer yanlış bir opcode gelirse bu hatayı veriyor konsola yazdırıyor

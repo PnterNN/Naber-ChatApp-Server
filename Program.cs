@@ -3,9 +3,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 using System.Text;
+
+using System.Net.Sockets;
 using System.Threading.Tasks;
+using MySqlX.XDevAPI;
 
 namespace JavaProject___Server
 {
@@ -17,7 +19,7 @@ namespace JavaProject___Server
 
         //Restfull API için gerekli değişkenler
         static HttpListener _httpListener;
-        private static string pageData =
+        private static readonly string pageData =
             "<!DOCTYPE>" +
             "<html>" +
             "  <head>" +
@@ -28,7 +30,7 @@ namespace JavaProject___Server
             "  </body>" +
             "</html>";
 
-        static void Main(string[] args)
+        public static void Main()
         {
 
             //Burda chat sunucusunu başlatıyoruz 9001 portunu kullanıyor
@@ -121,6 +123,14 @@ namespace JavaProject___Server
             }
         }
 
+        public static void sendInfoToClient(Client client, string username, string uid)
+        {
+            var packet = new PacketBuilder();
+            packet.WriteOpCode(2);
+            packet.WriteMessage(username);
+            packet.WriteMessage(uid);
+            client.ClientSocket.Client.Send(packet.GetPacketBytes());
+        }
         public static void SendRegisterInfo(Client client, bool state)
         {
             var packet = new PacketBuilder();
