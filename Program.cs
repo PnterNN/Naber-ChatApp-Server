@@ -52,27 +52,48 @@ namespace JavaProject___Server
             {
                 while (true)
                 {
-                    var input = Console.ReadLine();
-                    if (input == "/exit")
+                    string[] args = Console.ReadLine().Split(' ');
+                    if (args[0] == "/exit")
                     {
                         Environment.Exit(0);
+                    }else if (args[0] == "/message")
+                    {
+                        bool userFound = false;
+                        foreach (var user in _users)
+                        {
+                            if (user.Username == args[1])
+                            {
+                                userFound = true;
+                                string message = "";
+                                for(int i = 2; i < args.Length; i++)
+                                {
+                                    message += args[i] + " ";
+                                }
+                                sendMessagetoClient(message, user);
+                            }
+                        }
+                        if(userFound == false)
+                        {
+                            Console.WriteLine("[" + DateTime.Now + "]: User not found");
+                        }
                     }
-                    else if ( input == "/users")
+                    else if (args[0] == "/users")
                     {
                         foreach (var user in _users)
                         {
                             Console.WriteLine("[" + DateTime.Now + "]: "+ user.Username + "[/"+ user.IPAdress +"] named user uid is " + user.UID);
                         }
                     }
-                    else if (input == "/clear")
+                    else if (args[0] == "/clear")
                     {
                         Console.Clear();
                     }
-                    else if (input == "/help")
+                    else if (args[0] == "/help")
                     {
                         Console.WriteLine("[" + DateTime.Now + "]: /exit - exit server");
                         Console.WriteLine("[" + DateTime.Now + "]: /users - show connected users");
                         Console.WriteLine("[" + DateTime.Now + "]: /clear - clear console");
+                        Console.WriteLine("[" + DateTime.Now + "]: /message [username] [message] - send message to user");
                     }
                     else
                     {
@@ -154,6 +175,14 @@ namespace JavaProject___Server
                     }
                 }
             }
+        }
+
+        public static void sendMessagetoClient(string message, Client client)
+        {
+            var packet = new PacketBuilder();
+            packet.WriteOpCode(7);
+            packet.WriteMessage(message);
+            client.ClientSocket.Client.Send(packet.GetPacketBytes());
         }
         public static void BroadcastDisconnect(Client client)
         {

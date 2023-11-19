@@ -117,8 +117,12 @@ namespace JavaProject___Server
                     var opcode = _packetReader.ReadByte();
                     switch (opcode)
                     {
+                        // 3 user connected
+                        // 4 user disconnected
+                        // 5 message received
+                        // 6 group created
                         //Buraya opcode switch case ile paketleri okucaz
-
+                            
 
                         //Eğer yanlış bir opcode gelirse bu hatayı veriyor konsola yazdırıyor
                         default:
