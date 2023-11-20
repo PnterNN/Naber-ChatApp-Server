@@ -45,14 +45,14 @@ namespace JavaProject___Server.NET.SQL
             }
         }
 
-        public void InsertMessage(Client client ,string username, string uid, string imageSource, string message, string time, string fistMessage)
+        public void InsertMessage(Client client ,string username, string ContactUID, string imageSource, string message, string time, string fistMessage)
         {
               using (MySqlConnection conn = GetConnection2())
             {
                 conn.Open();
                 MySqlCommand cmd = new MySqlCommand("INSERT INTO user_" + client.Username + " (Username, UID, ImageSource, Message, Time, FirstMessage) VALUES (@Username, @UID, @ImageSource, @Message, @Time, @FirstMessage)", conn);
                 cmd.Parameters.AddWithValue("@Username", username);
-                cmd.Parameters.AddWithValue("@UID", uid);
+                cmd.Parameters.AddWithValue("@UID", ContactUID);
                 cmd.Parameters.AddWithValue("@ImageSource", imageSource);
                 cmd.Parameters.AddWithValue("@Message", message);
                 cmd.Parameters.AddWithValue("@Time", time);

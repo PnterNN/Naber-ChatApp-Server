@@ -26,7 +26,6 @@ namespace JavaProject___Server
 
         PacketReader _packetReader;
 
-
         //Client giriş yapınca Sunucu clientin UID'sini ve username'ini kaydediyor ve sunucu loguna bilgi düşüyor
         public Client(TcpClient client)
         {
@@ -40,6 +39,7 @@ namespace JavaProject___Server
                 IPAdress = ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString();
 
                 MySqlDataBase sql = new MySqlDataBase();
+
 
                 bool status = false;
                 while (!status)
@@ -66,7 +66,7 @@ namespace JavaProject___Server
                                 sql.InsertUser(Username, UID, Email, Password);
                                 status = true;
                                 Program.SendRegisterInfo(this, true);
-                                Task.Run(() => Procces());
+                                Task.Run(() => Procces(sql));
                                 sql.createUserStorage(this);
                             }
                             break;
@@ -84,7 +84,7 @@ namespace JavaProject___Server
                                 Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user logged in, username: " + this.Username);
                                 status = true;
                                 Program.SendLoginInfo(this, true);
-                                Task.Run(() => Procces());
+                                Task.Run(() => Procces(sql));
                             }
                             else
                             {
@@ -107,7 +107,7 @@ namespace JavaProject___Server
 
 
         //Clientin paketlerini okuyor
-        void Procces()
+        void Procces(MySqlDataBase sql)
         {
             
             while (true)
@@ -117,12 +117,14 @@ namespace JavaProject___Server
                     var opcode = _packetReader.ReadByte();
                     switch (opcode)
                     {
-                        // 3 user connected
-                        // 4 user disconnected
-                        // 5 message received
-                        // 6 group created
-                        //Buraya opcode switch case ile paketleri okucaz
-                            
+                        case 5:
+                            var message = _packetReader.ReadMessage();
+                            var contactUID = _packetReader.ReadMessage();
+                            var firstMessage = _packetReader.ReadMessage();
+                            sql.InsertMessage(this, this.Username, contactUID, "imagelink", message, DateTime.Now.ToString(), firstMessage);
+                            sql.InsertMessage(Program._users.Where(x => x.UID.ToString() == contactUID).FirstOrDefault(), this.Username, contactUID, "imagelink", message, DateTime.Now.ToString(), firstMessage);
+                            Program.SendMessageToUser(message,contactUID,UID);
+                            break;       
 
                         //Eğer yanlış bir opcode gelirse bu hatayı veriyor konsola yazdırıyor
                         default:

@@ -44,7 +44,6 @@ namespace JavaProject___Server
                 {
                     var client = new Client(_listener.AcceptTcpClient());
                     _users.Add(client);
-                    BroadcastConnection(client);
                 }
             });
             //konsolda yetkili komutları kullanmak için
@@ -158,6 +157,18 @@ namespace JavaProject___Server
             }
             return clients;
         }
+
+        public static void BroadcastDisconnect(Client client)
+        {
+            _users.Remove(client);
+            var packet = new PacketBuilder();
+            packet.WriteOpCode(4);
+            packet.WriteMessage(client.UID);
+            foreach (var u in _users)
+            {
+                u.ClientSocket.Client.Send(packet.GetPacketBytes());
+            }
+        }
         static void BroadcastConnection(Client client)
         {
             foreach (var user in _users)
@@ -184,17 +195,7 @@ namespace JavaProject___Server
             packet.WriteMessage(message);
             client.ClientSocket.Client.Send(packet.GetPacketBytes());
         }
-        public static void BroadcastDisconnect(Client client)
-        {
-            _users.Remove(client);
-            var packet = new PacketBuilder();
-            packet.WriteOpCode(4);
-            packet.WriteMessage(client.UID);
-            foreach (var u in _users)
-            {
-                u.ClientSocket.Client.Send(packet.GetPacketBytes());
-            }
-        }
+
         public static void SendMessageToUser(string msg, string contactUID, string senderUID)
         {
             foreach (var u in _users)
