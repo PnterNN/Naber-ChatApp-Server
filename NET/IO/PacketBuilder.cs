@@ -24,9 +24,15 @@ namespace JavaProject___Server.NET.IO
         //Paketin içindeki mesajı yazıyor
         public void WriteMessage(string msg)
         {
-            byte[] buff = BitConverter.GetBytes(msg.Length);
-            _ms.Write(buff, 0, buff.Length);
-            _ms.Write(Encoding.ASCII.GetBytes(msg), 0, msg.Length);
+
+            byte[] messageBytes = Encoding.UTF8.GetBytes(msg);
+            byte[] lengthBytes = BitConverter.GetBytes(messageBytes.Length);
+            _ms.Write(lengthBytes, 0, lengthBytes.Length);
+            _ms.Write(messageBytes, 0, messageBytes.Length);
+
+            //byte[] buff = BitConverter.GetBytes(msg.Length);
+            //_ms.Write(buff, 0, buff.Length);
+            //_ms.Write(Encoding.ASCII.GetBytes(msg), 0, msg.Length);
         }
 
         public byte[] GetPacketBytes()

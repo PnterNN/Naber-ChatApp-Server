@@ -20,7 +20,7 @@ namespace JavaProject___Server.NET.IO
             msgBuffer = new byte[length];
             _ns.Read(msgBuffer, 0, length);
 
-            var msg = Encoding.ASCII.GetString(msgBuffer);
+            var msg = Encoding.UTF8.GetString(msgBuffer);
             return msg;
         }
     }
