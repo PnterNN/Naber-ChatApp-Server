@@ -66,6 +66,7 @@ namespace JavaProject___Server
                                 sql.InsertUser(Username, UID, Email, Password);
                                 status = true;
                                 Program.SendRegisterInfo(this, true);
+                                
                                 Task.Run(() => Procces(sql));
                                 sql.createUserStorage(this);
                             }
@@ -83,7 +84,16 @@ namespace JavaProject___Server
                                 Program.sendInfoToClient(this, Username, UID);
                                 Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user logged in, username: " + this.Username);
                                 status = true;
+                                Dictionary<int, List<string>> infos = sql.getMessages(this);
+                                foreach (KeyValuePair<int,List<string>> info in infos)
+                                {
+                                    foreach(string s in info.Value)
+                                    {
+                                        Console.WriteLine(info.Key + " " + s);
+                                    }
+                                }
                                 Program.SendLoginInfo(this, true);
+                                
                                 Task.Run(() => Procces(sql));
                             }
                             else
@@ -121,8 +131,8 @@ namespace JavaProject___Server
                             var message = _packetReader.ReadMessage();
                             var contactUID = _packetReader.ReadMessage();
                             var firstMessage = _packetReader.ReadMessage();
-                            sql.InsertMessage(this, this.Username, contactUID, "imagelink", message, DateTime.Now.ToString(), firstMessage);
-                            sql.InsertMessage(Program._users.Where(x => x.UID.ToString() == contactUID).FirstOrDefault(), this.Username, contactUID, "imagelink", message, DateTime.Now.ToString(), firstMessage);
+                            sql.InsertMessage(this.Username, this.Username, contactUID, "imagelink", message, DateTime.Now.ToString(), firstMessage);
+                            sql.InsertMessage(Program._users.Where(x => x.UID.ToString() == contactUID).FirstOrDefault().Username, this.Username, contactUID, "imagelink", message, DateTime.Now.ToString(), firstMessage);
                             Program.SendMessageToUser(message,contactUID,UID);
                             break;       
 

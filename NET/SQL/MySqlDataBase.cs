@@ -1,6 +1,8 @@
-﻿using MySql.Data.MySqlClient;
+﻿using K4os.Compression.LZ4.Encoders;
+using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -45,12 +47,12 @@ namespace JavaProject___Server.NET.SQL
             }
         }
 
-        public void InsertMessage(Client client ,string username, string ContactUID, string imageSource, string message, string time, string fistMessage)
+        public void InsertMessage(string user ,string username, string ContactUID, string imageSource, string message, string time, string fistMessage)
         {
               using (MySqlConnection conn = GetConnection2())
             {
                 conn.Open();
-                MySqlCommand cmd = new MySqlCommand("INSERT INTO user_" + client.Username + " (Username, UID, ImageSource, Message, Time, FirstMessage) VALUES (@Username, @UID, @ImageSource, @Message, @Time, @FirstMessage)", conn);
+                MySqlCommand cmd = new MySqlCommand("INSERT INTO user_" + user + " (Username, UID, ImageSource, Message, Time, FirstMessage) VALUES (@Username, @UID, @ImageSource, @Message, @Time, @FirstMessage)", conn);
                 cmd.Parameters.AddWithValue("@Username", username);
                 cmd.Parameters.AddWithValue("@UID", ContactUID);
                 cmd.Parameters.AddWithValue("@ImageSource", imageSource);
@@ -60,6 +62,43 @@ namespace JavaProject___Server.NET.SQL
                 cmd.ExecuteNonQuery();
                 conn.Close();
             }
+        }
+
+        public Dictionary<int, List<string>> getMessages(Client client)
+        {
+            Dictionary<int, List<string>> messages = new Dictionary<int, List<string>>();
+            //get all rows from user table
+            using (MySqlConnection conn = GetConnection2())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("SELECT * FROM user_" + client.Username, conn);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (reader.HasRows)
+                    {
+                        List<string> infos;
+                        while (reader.Read())
+                        {
+                            infos = new List<string>();
+                            for(int i = 0; i < 6; i++)
+                            {
+                                infos.Add(reader.GetString(i));
+                            }
+                            messages.Add(messages.Count, infos);
+                        }
+                    }
+                }
+                conn.Close();
+                return messages;
+            }
+
+
+
+
+
+
+            return messages;
+
         }
 
         public string getName(string email)
