@@ -43,7 +43,6 @@ namespace JavaProject___Server
                 while (true)
                 {
                     var client = new Client(_listener.AcceptTcpClient());
-                    _users.Add(client);
                 }
             });
             //konsolda yetkili komutları kullanmak için
@@ -55,26 +54,6 @@ namespace JavaProject___Server
                     if (args[0] == "/exit")
                     {
                         Environment.Exit(0);
-                    }else if (args[0] == "/message")
-                    {
-                        bool userFound = false;
-                        foreach (var user in _users)
-                        {
-                            if (user.Username == args[1])
-                            {
-                                userFound = true;
-                                string message = "";
-                                for(int i = 2; i < args.Length; i++)
-                                {
-                                    message += args[i] + " ";
-                                }
-                                sendMessagetoClient(message, user);
-                            }
-                        }
-                        if(userFound == false)
-                        {
-                            Console.WriteLine("[" + DateTime.Now + "]: User not found");
-                        }
                     }
                     else if (args[0] == "/users")
                     {
@@ -158,100 +137,6 @@ namespace JavaProject___Server
             return clients;
         }
 
-        public static void BroadcastDisconnect(Client client)
-        {
-            _users.Remove(client);
-            var packet = new PacketBuilder();
-            packet.WriteOpCode(4);
-            packet.WriteMessage(client.UID);
-            foreach (var u in _users)
-            {
-                u.ClientSocket.Client.Send(packet.GetPacketBytes());
-            }
-        }
-        static void BroadcastConnection(Client client)
-        {
-            foreach (var user in _users)
-            {
-                foreach (var u in _users)
-                {
-                    if (user.UID != u.UID)
-                    {
-                        var packet = new PacketBuilder();
-                        packet.WriteOpCode(3);
-                        packet.WriteMessage(user.Username);
-                        packet.WriteMessage(user.UID.ToString());
-                        u.ClientSocket.Client.Send(packet.GetPacketBytes());
-
-                    }
-                }
-            }
-        }
-
-        public static void sendMessagetoClient(string message, Client client)
-        {
-            var packet = new PacketBuilder();
-            packet.WriteOpCode(7);
-            packet.WriteMessage(message);
-            client.ClientSocket.Client.Send(packet.GetPacketBytes());
-        }
-
-        public static void SendMessageToUser(string msg, string contactUID, string senderUID)
-        {
-            foreach (var u in _users)
-            {
-                if (u.UID.ToString() == contactUID.ToString())
-                {
-                    var packet = new PacketBuilder();
-                    packet.WriteOpCode(5);
-                    packet.WriteMessage(msg);
-                    packet.WriteMessage(_users.Where(x => x.UID.ToString() == senderUID).FirstOrDefault().Username);
-                    packet.WriteMessage(senderUID);
-                    u.ClientSocket.Client.Send(packet.GetPacketBytes());
-                }
-            }
-        }
-        public static void SendMessageToGroup(string msg, string contactUID, string senderUID)
-        {
-            var packet = new PacketBuilder();
-            packet.WriteOpCode(5);
-            packet.WriteMessage(msg);
-            packet.WriteMessage(_users.Where(x => x.UID.ToString() == senderUID).FirstOrDefault().Username);
-            packet.WriteMessage(contactUID);
-            List<Client> clients = convertUidToClient(contactUID);
-            foreach (Client client in clients)
-            {
-                try
-                {
-                    client.ClientSocket.Client.Send(packet.GetPacketBytes());
-                }
-                catch
-                {
-                    //Kullanıcı Uygulamadan çıkmış olabilir sql ile burda çok fazla uğrasılacak!!!
-                }
-            }
-        }
-        public static void SendCreatedGroup(string groupName, string clientIDS)
-        {
-            var packet = new PacketBuilder();
-            packet.WriteOpCode(6);
-            packet.WriteMessage(groupName);
-            packet.WriteMessage(clientIDS);
-
-            List<Client> clients = convertUidToClient(clientIDS);
-            foreach (Client client in clients)
-            {
-                client.ClientSocket.Client.Send(packet.GetPacketBytes());
-            }
-        }
-        public static void sendInfoToClient(Client client, string username, string uid)
-        {
-            var packet = new PacketBuilder();
-            packet.WriteOpCode(2);
-            packet.WriteMessage(username);
-            packet.WriteMessage(uid);
-            client.ClientSocket.Client.Send(packet.GetPacketBytes());
-        }
         public static void SendRegisterInfo(Client client, bool state)
         {
             var packet = new PacketBuilder();
@@ -266,13 +151,105 @@ namespace JavaProject___Server
             packet.WriteMessage(state.ToString());
             client.ClientSocket.Client.Send(packet.GetPacketBytes());
         }
+        public static void sendUserInfo(Client client, string username, string uid)
+        {
+            var packet = new PacketBuilder();
+            packet.WriteOpCode(2);
+            packet.WriteMessage(username);
+            packet.WriteMessage(uid);
+            client.ClientSocket.Client.Send(packet.GetPacketBytes());
+        }
+        public static void sendConnectionInfo(Client client)
+        {
+            foreach (var user in _users)
+            {
+                foreach (var u in _users)
+                {
+                    if (user.UID != u.UID)
+                    {
+                        var packet = new PacketBuilder();
+                        packet.WriteOpCode(3);
+                        packet.WriteMessage(user.Username);
+                        packet.WriteMessage(user.UID.ToString());
+                        u.ClientSocket.Client.Send(packet.GetPacketBytes());
+                        Console.WriteLine("[" + DateTime.Now + "]: " + u.Username + " kullanıcısına " + user.Username + " kullanıcı aktif bilgisi gönderildi");
+                    }
+                }
+            }
+        }
+        public static void sendDisconnectionInfo(Client client)
+        {
+            _users.Remove(client);
+            var packet = new PacketBuilder();
+            packet.WriteOpCode(4);
+            packet.WriteMessage(client.UID);
+            foreach (var u in _users)
+            {
+                u.ClientSocket.Client.Send(packet.GetPacketBytes());
+            }
+        }
+        public static void sendMessage(string msg, string contactUID, string senderUID)
+        {
+            var packet = new PacketBuilder();
+            packet.WriteOpCode(5);
+            packet.WriteMessage(msg);
+            packet.WriteMessage(_users.Where(x => x.UID.ToString() == senderUID).FirstOrDefault().Username);
+            packet.WriteMessage(contactUID);
+
+            if (contactUID.Contains(" "))
+            {
+                List<Client> clients = convertUidToClient(contactUID);
+                foreach (Client client in clients)
+                {
+                    try
+                    {
+                        client.ClientSocket.Client.Send(packet.GetPacketBytes());
+                    }
+                    catch
+                    {
+                        //Kullanıcı Uygulamadan çıkmış olabilir sql ile burda çok fazla uğrasılacak!!!
+                    }
+                }
+            }
+            else
+            {
+                foreach (var u in _users)
+                {
+                    if (u.UID.ToString() == contactUID.ToString())
+                    {
+                        try
+                        {
+                            u.ClientSocket.Client.Send(packet.GetPacketBytes());
+                        }
+                        catch
+                        {
+                            //Kullanıcı Uygulamadan çıkmış olabilir sql ile burda çok fazla uğrasılacak!!!
+                        }
+                    }
+                }
+            }
+        }
+        public static void createGroup(string groupName, string clientIDS)
+        {
+            var packet = new PacketBuilder();
+            packet.WriteOpCode(6);
+            packet.WriteMessage(groupName);
+            packet.WriteMessage(clientIDS);
+
+            List<Client> clients = convertUidToClient(clientIDS);
+            foreach (Client client in clients)
+            {
+                client.ClientSocket.Client.Send(packet.GetPacketBytes());
+            }
+        }
     }
-    // OpCodes
-    //0 - Register
-    //1 - Login
-    //2 - Info
-    //3 - New Connection
-    //4 - Disconnect
-    //5 - Message - Group Message
-    //6 - Group Created
+    // opcode
+    // 0 - register
+    // 1 - login
+    // 2 - send info
+    // 3 - broadcast connection
+    // 4 - broadcast disconnect
+    // 5 - send message
+    // 6 - create group
+
 }

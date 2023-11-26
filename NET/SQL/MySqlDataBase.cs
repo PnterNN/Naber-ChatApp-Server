@@ -91,14 +91,6 @@ namespace JavaProject___Server.NET.SQL
                 conn.Close();
                 return messages;
             }
-
-
-
-
-
-
-            return messages;
-
         }
 
         public string getName(string email)

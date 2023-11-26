@@ -61,7 +61,8 @@ namespace JavaProject___Server
                             else
                             {
                                 UID = Guid.NewGuid().ToString();
-                                Program.sendInfoToClient(this, Username, UID);
+                                Program._users.Add(this);
+                                Program.sendUserInfo(this, Username, UID);
                                 Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user registered, username: " + Username);
                                 sql.InsertUser(Username, UID, Email, Password);
                                 status = true;
@@ -69,6 +70,8 @@ namespace JavaProject___Server
                                 
                                 Task.Run(() => Procces(sql));
                                 sql.createUserStorage(this);
+                                Program.sendConnectionInfo(this);
+
                             }
                             break;
                         //opcode 1 ise kullanıcı giriş yapıyor
@@ -78,28 +81,28 @@ namespace JavaProject___Server
                             Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user tried to sign in, checking information...");
                             if (sql.CheckLoginUser(Email, Password))
                             {
-
                                 Username = sql.getName(Email);
                                 UID = sql.getUID(Email);
-                                Program.sendInfoToClient(this, Username, UID);
+                                Program._users.Add(this);
+                                Program.sendUserInfo(this, Username, UID);
                                 Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user logged in, username: " + this.Username);
                                 status = true;
-                                Dictionary<int, List<string>> infos = sql.getMessages(this);
-                                foreach (KeyValuePair<int,List<string>> info in infos)
-                                {
-                                    foreach(string s in info.Value)
-                                    {
-                                        Console.WriteLine(info.Key + " " + s);
-                                    }
-                                }
+                                //Dictionary<int, List<string>> infos = sql.getMessages(this);
+                                //foreach (KeyValuePair<int,List<string>> info in infos)
+                                //{
+                                //    foreach(string s in info.Value)
+                                //    {
+                                //        Console.WriteLine(info.Key + " " + s);
+                                //    }
+                                //}
                                 Program.SendLoginInfo(this, true);
-                                
                                 Task.Run(() => Procces(sql));
+                                Program.sendConnectionInfo(this);
                             }
                             else
                             {
-                                Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user unknown account: " + Email);
                                 Program.SendLoginInfo(this, false);
+                                Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user unknown account: " + Email);
                             }
                             break;
                         //opcode yanlış ise bu hatayı veriyor konsola yazdırıyor
@@ -133,9 +136,24 @@ namespace JavaProject___Server
                             var firstMessage = _packetReader.ReadMessage();
                             sql.InsertMessage(this.Username, this.Username, contactUID, "imagelink", message, DateTime.Now.ToString(), firstMessage);
                             sql.InsertMessage(Program._users.Where(x => x.UID.ToString() == contactUID).FirstOrDefault().Username, this.Username, contactUID, "imagelink", message, DateTime.Now.ToString(), firstMessage);
-                            Program.SendMessageToUser(message,contactUID,UID);
-                            break;       
-
+                            Program.sendMessage(message,contactUID,UID);
+                            break;
+                        case 6:
+                            var groupName = _packetReader.ReadMessage();
+                            var groupUsernames = _packetReader.ReadMessage();
+                            List<string> usernames = groupUsernames.Split(' ').ToList();
+                            string clientUIDS = "";
+                            foreach (string username in usernames)
+                            {
+                                Client client = Program._users.Where(x => x.Username.ToLower() == username).FirstOrDefault();
+                                if (client != null)
+                                {
+                                    clientUIDS+= client.UID + " ";
+                                }
+                            }
+                            clientUIDS.TrimEnd(' ');  
+                            Program.createGroup(groupName, clientUIDS);
+                            break;
                         //Eğer yanlış bir opcode gelirse bu hatayı veriyor konsola yazdırıyor
                         default:
                             Console.WriteLine("[" + DateTime.Now + "]: Unknown opcode: " + opcode);
@@ -146,7 +164,8 @@ namespace JavaProject___Server
                 {
                     //Eğer Client Programı kapatırsa ve ya interneti giderse sunucu kullanıcının bilgilerini siliyor
                     Console.WriteLine("[" + DateTime.Now + "]: " + Username + "[/" + IPAdress + "] has disconnected.");
-                    Program.BroadcastDisconnect(this);
+                    Program.sendDisconnectionInfo(this);
+                    Program._users.Remove(this);
                     ClientSocket.Close();
                     break;
                 }
