@@ -190,12 +190,6 @@ namespace JavaProject___Server
         }
         public static void sendMessage(string msg, string contactUID, string senderUID)
         {
-            var packet = new PacketBuilder();
-            packet.WriteOpCode(5);
-            packet.WriteMessage(msg);
-            packet.WriteMessage(_users.Where(x => x.UID.ToString() == senderUID).FirstOrDefault().Username);
-            packet.WriteMessage(contactUID);
-
             if (contactUID.Contains(" "))
             {
                 List<Client> clients = convertUidToClient(contactUID);
@@ -203,6 +197,11 @@ namespace JavaProject___Server
                 {
                     try
                     {
+                        var packet = new PacketBuilder();
+                        packet.WriteOpCode(5);
+                        packet.WriteMessage(msg);
+                        packet.WriteMessage(_users.Where(x => x.UID.ToString() == senderUID).FirstOrDefault().Username);
+                        packet.WriteMessage(contactUID);
                         client.ClientSocket.Client.Send(packet.GetPacketBytes());
                     }
                     catch
@@ -219,6 +218,11 @@ namespace JavaProject___Server
                     {
                         try
                         {
+                            var packet = new PacketBuilder();
+                            packet.WriteOpCode(5);
+                            packet.WriteMessage(msg);
+                            packet.WriteMessage(_users.Where(x => x.UID.ToString() == senderUID).FirstOrDefault().Username);
+                            packet.WriteMessage(senderUID);
                             u.ClientSocket.Client.Send(packet.GetPacketBytes());
                         }
                         catch

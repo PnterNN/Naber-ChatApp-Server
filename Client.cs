@@ -105,6 +105,22 @@ namespace JavaProject___Server
                                 Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user unknown account: " + Email);
                             }
                             break;
+                        case 5:
+                            var message = _packetReader.ReadMessage();
+                            var contactUID = _packetReader.ReadMessage();
+                            var firstMessage = _packetReader.ReadMessage();
+                            if (firstMessage == "True")
+                            {
+                                firstMessage = "1";
+                            }
+                            else
+                            {
+                                firstMessage = "0";
+                            }
+                            sql.InsertMessage(this.Username.ToLower(), this.Username, contactUID, "imagelink", message, DateTime.Now.ToString(), firstMessage);
+                            sql.InsertMessage(Program._users.Where(x => x.UID.ToString() == contactUID).FirstOrDefault().Username.ToLower(), this.Username, this.UID, "imagelink", message, DateTime.Now.ToString(), firstMessage);
+                            Program.sendMessage(message,contactUID,UID);
+                            break;
                         //opcode yanlış ise bu hatayı veriyor konsola yazdırıyor
                         default:
                             Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user unknown opcode: " + opcode);
