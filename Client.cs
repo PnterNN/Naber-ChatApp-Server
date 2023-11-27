@@ -70,7 +70,8 @@ namespace JavaProject___Server
                                 
                                 Task.Run(() => Procces(sql));
                                 sql.createUserStorage(this);
-                                Program.sendConnectionInfo(this);
+
+                                Program.sendConnectionInfo(sql);
 
                             }
                             break;
@@ -81,23 +82,30 @@ namespace JavaProject___Server
                             Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user tried to sign in, checking information...");
                             if (sql.CheckLoginUser(Email, Password))
                             {
+                                bool check = false;
+                                foreach (Client c in Program._users)
+                                {
+                                    if (c.Email == Email)
+                                    {
+                                        Program.SendLoginInfo(this, false);
+                                        Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user already logged in, username: " + this.Username);
+                                        check = true;
+                                        break;
+                                    }
+                                }
+                                if (check)
+                                {
+                                    break;
+                                }
                                 Username = sql.getName(Email);
                                 UID = sql.getUID(Email);
                                 Program._users.Add(this);
                                 Program.sendUserInfo(this, Username, UID);
                                 Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user logged in, username: " + this.Username);
                                 status = true;
-                                //Dictionary<int, List<string>> infos = sql.getMessages(this);
-                                //foreach (KeyValuePair<int,List<string>> info in infos)
-                                //{
-                                //    foreach(string s in info.Value)
-                                //    {
-                                //        Console.WriteLine(info.Key + " " + s);
-                                //    }
-                                //}
                                 Program.SendLoginInfo(this, true);
                                 Task.Run(() => Procces(sql));
-                                Program.sendConnectionInfo(this);
+                                Program.sendConnectionInfo(sql);
                             }
                             else
                             {
@@ -105,22 +113,7 @@ namespace JavaProject___Server
                                 Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user unknown account: " + Email);
                             }
                             break;
-                        case 5:
-                            var message = _packetReader.ReadMessage();
-                            var contactUID = _packetReader.ReadMessage();
-                            var firstMessage = _packetReader.ReadMessage();
-                            if (firstMessage == "True")
-                            {
-                                firstMessage = "1";
-                            }
-                            else
-                            {
-                                firstMessage = "0";
-                            }
-                            sql.InsertMessage(this.Username.ToLower(), this.Username, contactUID, "imagelink", message, DateTime.Now.ToString(), firstMessage);
-                            sql.InsertMessage(Program._users.Where(x => x.UID.ToString() == contactUID).FirstOrDefault().Username.ToLower(), this.Username, this.UID, "imagelink", message, DateTime.Now.ToString(), firstMessage);
-                            Program.sendMessage(message,contactUID,UID);
-                            break;
+                       
                         //opcode yanlış ise bu hatayı veriyor konsola yazdırıyor
                         default:
                             Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user unknown opcode: " + opcode);
@@ -150,8 +143,24 @@ namespace JavaProject___Server
                             var message = _packetReader.ReadMessage();
                             var contactUID = _packetReader.ReadMessage();
                             var firstMessage = _packetReader.ReadMessage();
+                            if (firstMessage == "True")
+                            {
+                                firstMessage = "1";
+                            }
+                            else
+                            {
+                                firstMessage = "0";
+                            }
                             sql.InsertMessage(this.Username, this.Username, contactUID, "imagelink", message, DateTime.Now.ToString(), firstMessage);
-                            sql.InsertMessage(Program._users.Where(x => x.UID.ToString() == contactUID).FirstOrDefault().Username, this.Username, contactUID, "imagelink", message, DateTime.Now.ToString(), firstMessage);
+                            if (Program._users.Where(x => x.UID.ToString() == contactUID) != null)
+                            {
+                                sql.InsertMessage(Program._users.Where(x => x.UID.ToString() == contactUID).FirstOrDefault().Username, this.Username, this.UID, "imagelink", message, DateTime.Now.ToString(), firstMessage);
+                            }
+                            else
+                            {
+                                sql.InsertMessage(sql.getName(sql.getMail(contactUID)), this.Username, this.UID, "imagelink", message, DateTime.Now.ToString(), firstMessage);
+                            }
+                            
                             Program.sendMessage(message,contactUID,UID);
                             break;
                         case 6:

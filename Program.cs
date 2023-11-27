@@ -8,6 +8,8 @@ using System.Text;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using MySqlX.XDevAPI;
+using JavaProject___Server.NET.SQL;
+using Microsoft.Win32;
 
 namespace JavaProject___Server
 {
@@ -159,7 +161,8 @@ namespace JavaProject___Server
             packet.WriteMessage(uid);
             client.ClientSocket.Client.Send(packet.GetPacketBytes());
         }
-        public static void sendConnectionInfo(Client client)
+
+        public static void sendConnectionInfo(MySqlDataBase sql)
         {
             foreach (var user in _users)
             {
@@ -167,12 +170,34 @@ namespace JavaProject___Server
                 {
                     if (user.UID != u.UID)
                     {
+                        //u kendisi
+                        //user programa giren kişi
                         var packet = new PacketBuilder();
                         packet.WriteOpCode(3);
                         packet.WriteMessage(user.Username);
                         packet.WriteMessage(user.UID.ToString());
+                        Dictionary<int, List<string>> messages = sql.getMessages(u);
+                        int messagecount = 0;
+                        foreach (var message in messages.Values)
+                        {
+                            if (message[1] == user.UID.ToString())
+                            {
+                                messagecount++;
+                            }
+                        }
+                        packet.WriteMessage(messagecount.ToString());
+                        foreach (var message in messages.Values)
+                        {
+                            if (message[1] == user.UID.ToString())
+                            {
+                                for (int i = 0; i < 6; i++)
+                                {
+                                    Console.WriteLine(i + " " + message[i]);
+                                    packet.WriteMessage(message[i]);
+                                }
+                            }
+                        }
                         u.ClientSocket.Client.Send(packet.GetPacketBytes());
-                        Console.WriteLine("[" + DateTime.Now + "]: " + u.Username + " kullanıcısına " + user.Username + " kullanıcı aktif bilgisi gönderildi");
                     }
                 }
             }

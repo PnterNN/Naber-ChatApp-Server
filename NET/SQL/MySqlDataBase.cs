@@ -93,6 +93,32 @@ namespace JavaProject___Server.NET.SQL
             }
         }
 
+        public string getMail(string UID)
+        {
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("SELECT Email FROM users WHERE UID=@UID", conn);
+                cmd.Parameters.AddWithValue("@UID", UID);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (reader.HasRows)
+                    {
+                        reader.Read();
+                        string email = reader.GetString(0);
+                        conn.Close();
+                        return email;
+                    }
+                    else
+                    {
+                        conn.Close();
+                        return null;
+                    }
+                }
+            }
+
+        }
+
         public string getName(string email)
         {
               using (MySqlConnection conn = GetConnection())
