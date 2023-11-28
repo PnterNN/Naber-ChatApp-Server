@@ -14,10 +14,12 @@ namespace JavaProject___Server.NET.SQL
     {
         private readonly string _connectionString;
         private readonly string _connectionString2;
+        private readonly string _connectionString3;
         public MySqlDataBase()
         {
             _connectionString = "Server=46.31.77.173,3306;Database=javaproject;Uid=JavaProject;Pwd=JavaProject_ICU123;";
             _connectionString2 = "Server=46.31.77.173,3306;Database=javaproject_user;Uid=JavaProject;Pwd=JavaProject_ICU123;";
+            _connectionString3 = "Server=46.31.77.173,3306;Database=javaproject_group;Uid=JavaProject;Pwd=JavaProject_ICU123;";
         }
         protected MySqlConnection GetConnection()
         {
@@ -27,8 +29,30 @@ namespace JavaProject___Server.NET.SQL
         {
             return new MySqlConnection(_connectionString2);
         }
+        protected MySqlConnection GetConnection3()
+        {
+            return new MySqlConnection(_connectionString3);
+        }
 
-        
+
+        public void createGroupStorage(string groupUID)
+        {
+            using (MySqlConnection conn = GetConnection3())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("CREATE TABLE IF NOT EXISTS group_" + groupUID + " (Username VARCHAR(255), UID VARCHAR(36), ImageSource VARCHAR(255), Message VARCHAR(1000), Time VARCHAR(255), FirstMessage BOOLEAN)", conn);
+                try
+                {
+                    cmd.ExecuteNonQuery();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+                conn.Close();
+            }
+        }
+
         public void createUserStorage(Client client)
         {
             using (MySqlConnection conn = GetConnection2())

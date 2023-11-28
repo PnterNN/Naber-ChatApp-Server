@@ -192,7 +192,6 @@ namespace JavaProject___Server
                             {
                                 for (int i = 0; i < 6; i++)
                                 {
-                                    Console.WriteLine(i + " " + message[i]);
                                     packet.WriteMessage(message[i]);
                                 }
                             }

@@ -152,15 +152,7 @@ namespace JavaProject___Server
                                 firstMessage = "0";
                             }
                             sql.InsertMessage(this.Username, this.Username, contactUID, "imagelink", message, DateTime.Now.ToString(), firstMessage);
-                            if (Program._users.Where(x => x.UID.ToString() == contactUID) != null)
-                            {
-                                sql.InsertMessage(Program._users.Where(x => x.UID.ToString() == contactUID).FirstOrDefault().Username, this.Username, this.UID, "imagelink", message, DateTime.Now.ToString(), firstMessage);
-                            }
-                            else
-                            {
-                                sql.InsertMessage(sql.getName(sql.getMail(contactUID)), this.Username, this.UID, "imagelink", message, DateTime.Now.ToString(), firstMessage);
-                            }
-                            
+                            sql.InsertMessage(sql.getName(sql.getMail(contactUID)), this.Username, this.UID, "imagelink", message, DateTime.Now.ToString(), firstMessage);
                             Program.sendMessage(message,contactUID,UID);
                             break;
                         case 6:
@@ -168,6 +160,7 @@ namespace JavaProject___Server
                             var groupUsernames = _packetReader.ReadMessage();
                             List<string> usernames = groupUsernames.Split(' ').ToList();
                             string clientUIDS = "";
+
                             foreach (string username in usernames)
                             {
                                 Client client = Program._users.Where(x => x.Username.ToLower() == username).FirstOrDefault();
@@ -176,7 +169,7 @@ namespace JavaProject___Server
                                     clientUIDS+= client.UID + " ";
                                 }
                             }
-                            clientUIDS.TrimEnd(' ');  
+                            clientUIDS.TrimEnd(' ');
                             Program.createGroup(groupName, clientUIDS);
                             break;
                         //Eğer yanlış bir opcode gelirse bu hatayı veriyor konsola yazdırıyor
