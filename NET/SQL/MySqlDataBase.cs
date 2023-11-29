@@ -58,7 +58,7 @@ namespace JavaProject___Server.NET.SQL
             using (MySqlConnection conn = GetConnection2())
             {
                 conn.Open();
-                MySqlCommand cmd = new MySqlCommand("CREATE TABLE IF NOT EXISTS user_" + client.Username + " (Username VARCHAR(255), UID VARCHAR(36), ImageSource VARCHAR(255), Message VARCHAR(1000), Time VARCHAR(255), FirstMessage BOOLEAN)", conn);
+                MySqlCommand cmd = new MySqlCommand("CREATE TABLE IF NOT EXISTS user_" + client.Username + " (Username VARCHAR(255), UID VARCHAR(36), ImageSource VARCHAR(255), Message VARCHAR(1000), Time VARCHAR(255), FirstMessage BOOLEAN, MessageUID VARCHAR(255))", conn);
                 try
                 {
                     cmd.ExecuteNonQuery();
@@ -70,19 +70,55 @@ namespace JavaProject___Server.NET.SQL
                 conn.Close();
             }
         }
+        public bool checkMessage(string user, string messageUID)
+        {
+            using (MySqlConnection conn = GetConnection2())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("SELECT * FROM user_" + user + " WHERE MessageUID = @MessageUID", conn);
+                cmd.Parameters.AddWithValue("@MessageUID", messageUID);
+                MySqlDataReader reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    if (reader["Username"].ToString() == user)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                conn.Close();
+            }
+            return false;
+        }
 
-        public void InsertMessage(string user ,string username, string ContactUID, string imageSource, string message, string time, string fistMessage)
+        public void deleteMessage(string user, string messageUID)
+        {
+            using (MySqlConnection conn = GetConnection2())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("DELETE FROM user_" + user + " WHERE MessageUID = @MessageUID", conn);
+                cmd.Parameters.AddWithValue("@MessageUID", messageUID);
+                cmd.ExecuteNonQuery();
+                conn.Close();
+            }
+        }
+
+        public void InsertMessage(string user ,string username, string ContactUID, string imageSource, string message, string time, string fistMessage, string messageUID)
         {
               using (MySqlConnection conn = GetConnection2())
             {
                 conn.Open();
-                MySqlCommand cmd = new MySqlCommand("INSERT INTO user_" + user + " (Username, UID, ImageSource, Message, Time, FirstMessage) VALUES (@Username, @UID, @ImageSource, @Message, @Time, @FirstMessage)", conn);
+                MySqlCommand cmd = new MySqlCommand("INSERT INTO user_" + user + " (Username, UID, ImageSource, Message, Time, FirstMessage, MessageUID) VALUES (@Username, @UID, @ImageSource, @Message, @Time, @FirstMessage, @MessageUID)", conn);
                 cmd.Parameters.AddWithValue("@Username", username);
                 cmd.Parameters.AddWithValue("@UID", ContactUID);
                 cmd.Parameters.AddWithValue("@ImageSource", imageSource);
                 cmd.Parameters.AddWithValue("@Message", message);
                 cmd.Parameters.AddWithValue("@Time", time);
                 cmd.Parameters.AddWithValue("@FirstMessage", fistMessage);
+                cmd.Parameters.AddWithValue("@MessageUID", messageUID);
                 cmd.ExecuteNonQuery();
                 conn.Close();
             }
@@ -104,7 +140,7 @@ namespace JavaProject___Server.NET.SQL
                         while (reader.Read())
                         {
                             infos = new List<string>();
-                            for(int i = 0; i < 6; i++)
+                            for(int i = 0; i < 7; i++)
                             {
                                 infos.Add(reader.GetString(i));
                             }

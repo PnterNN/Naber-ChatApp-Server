@@ -190,7 +190,7 @@ namespace JavaProject___Server
                         {
                             if (message[1] == user.UID.ToString())
                             {
-                                for (int i = 0; i < 6; i++)
+                                for (int i = 0; i < 7; i++)
                                 {
                                     packet.WriteMessage(message[i]);
                                 }
@@ -212,7 +212,7 @@ namespace JavaProject___Server
                 u.ClientSocket.Client.Send(packet.GetPacketBytes());
             }
         }
-        public static void sendMessage(string msg, string contactUID, string senderUID)
+        public static void sendMessage(string msg, string contactUID, string senderUID, string messageUID)
         {
             if (contactUID.Contains(" "))
             {
@@ -226,6 +226,7 @@ namespace JavaProject___Server
                         packet.WriteMessage(msg);
                         packet.WriteMessage(_users.Where(x => x.UID.ToString() == senderUID).FirstOrDefault().Username);
                         packet.WriteMessage(contactUID);
+                        packet.WriteMessage(messageUID);
                         client.ClientSocket.Client.Send(packet.GetPacketBytes());
                     }
                     catch
@@ -247,6 +248,7 @@ namespace JavaProject___Server
                             packet.WriteMessage(msg);
                             packet.WriteMessage(_users.Where(x => x.UID.ToString() == senderUID).FirstOrDefault().Username);
                             packet.WriteMessage(senderUID);
+                            packet.WriteMessage(messageUID);
                             u.ClientSocket.Client.Send(packet.GetPacketBytes());
                         }
                         catch
@@ -270,6 +272,22 @@ namespace JavaProject___Server
                 client.ClientSocket.Client.Send(packet.GetPacketBytes());
             }
         }
+        public static void deleteMessage(string messageUID, string userUID, string contactUID)
+        {
+            var packet = new PacketBuilder();
+            packet.WriteOpCode(7);
+            packet.WriteMessage(contactUID);
+            packet.WriteMessage(messageUID);
+            foreach (var u in _users)
+            {
+                if (u.UID.ToString() == userUID)
+                {
+                    u.ClientSocket.Client.Send(packet.GetPacketBytes());
+                }
+            }
+            
+
+        }
     }
     // opcode
     // 0 - register
@@ -279,5 +297,6 @@ namespace JavaProject___Server
     // 4 - broadcast disconnect
     // 5 - send message
     // 6 - create group
+    // 7 - delete message
 
 }

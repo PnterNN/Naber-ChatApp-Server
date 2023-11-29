@@ -143,6 +143,7 @@ namespace JavaProject___Server
                             var message = _packetReader.ReadMessage();
                             var contactUID = _packetReader.ReadMessage();
                             var firstMessage = _packetReader.ReadMessage();
+                            var messageUID = _packetReader.ReadMessage();
                             if (firstMessage == "True")
                             {
                                 firstMessage = "1";
@@ -151,9 +152,9 @@ namespace JavaProject___Server
                             {
                                 firstMessage = "0";
                             }
-                            sql.InsertMessage(this.Username, this.Username, contactUID, "imagelink", message, DateTime.Now.ToString(), firstMessage);
-                            sql.InsertMessage(sql.getName(sql.getMail(contactUID)), this.Username, this.UID, "imagelink", message, DateTime.Now.ToString(), firstMessage);
-                            Program.sendMessage(message,contactUID,UID);
+                            sql.InsertMessage(this.Username, this.Username, contactUID, "imagelink", message, DateTime.Now.ToString(), firstMessage, messageUID);
+                            sql.InsertMessage(sql.getName(sql.getMail(contactUID)), this.Username, this.UID, "imagelink", message, DateTime.Now.ToString(), firstMessage, messageUID);
+                            Program.sendMessage(message,contactUID,UID, messageUID);
                             break;
                         case 6:
                             var groupName = _packetReader.ReadMessage();
@@ -172,6 +173,20 @@ namespace JavaProject___Server
                             clientUIDS.TrimEnd(' ');
                             Program.createGroup(groupName, clientUIDS);
                             break;
+                        case 7:
+                            var deleteMessageUID = _packetReader.ReadMessage();
+                            var deleteMessageContactUID = _packetReader.ReadMessage();
+                            
+                            if (sql.checkMessage(this.Username, deleteMessageUID))
+                            {
+                                sql.deleteMessage(this.Username, deleteMessageUID);
+                                sql.deleteMessage(sql.getName(sql.getMail(deleteMessageContactUID)), deleteMessageUID);
+                                Program.deleteMessage(deleteMessageUID, this.UID, deleteMessageContactUID);
+                                Program.deleteMessage(deleteMessageUID, deleteMessageContactUID, this.UID);
+                            }
+                            
+                            break;
+                            
                         //Eğer yanlış bir opcode gelirse bu hatayı veriyor konsola yazdırıyor
                         default:
                             Console.WriteLine("[" + DateTime.Now + "]: Unknown opcode: " + opcode);
