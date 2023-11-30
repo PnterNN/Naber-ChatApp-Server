@@ -20,8 +20,6 @@ namespace JavaProject___Server
         public string Password { get; set; }
         public string IPAdress { get; set; }
         public string UID { get; set; }
-
-
         public TcpClient ClientSocket { get; set; }
 
         PacketReader _packetReader;
@@ -184,9 +182,12 @@ namespace JavaProject___Server
                                 Program.deleteMessage(deleteMessageUID, this.UID, deleteMessageContactUID);
                                 Program.deleteMessage(deleteMessageUID, deleteMessageContactUID, this.UID);
                             }
-                            
                             break;
-                            
+
+                        case 8:
+                            var userColor = _packetReader.ReadMessage();
+                            Program.BroadcastMutedState(userColor, this.UID);
+                            break;
                         //Eğer yanlış bir opcode gelirse bu hatayı veriyor konsola yazdırıyor
                         default:
                             Console.WriteLine("[" + DateTime.Now + "]: Unknown opcode: " + opcode);

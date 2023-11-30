@@ -16,8 +16,13 @@ namespace JavaProject___Server
     internal class Program
     {
         static TcpListener _listener;
+        static TcpListener _listenerAudio;
         public static List<Client> _users;
+        public static List<AudioClient> _audioUsers;
 
+        private static object locker = new object();
+
+        
 
         //Restfull API için gerekli değişkenler
         static HttpListener _httpListener;
@@ -38,13 +43,17 @@ namespace JavaProject___Server
             //Burda chat sunucusunu başlatıyoruz 9001 portunu kullanıyor
             _users = new List<Client>();
             _listener = new TcpListener(IPAddress.Any, 9001);
+            _listenerAudio = new TcpListener(IPAddress.Any, 9000);
             Console.WriteLine("Starting chat server on *:9001");
+            Console.WriteLine("Starting NAudio server on *:9000");
             _listener.Start();
-            _ = Task.Run(() =>
+            _listenerAudio.Start();
+            _ = Task.Run(async () =>
             {
                 while (true)
                 {
-                    var client = new Client(_listener.AcceptTcpClient());
+                    var entry = _listener.AcceptTcpClientAsync();
+                    var client = new Client(await entry);
                 }
             });
             //konsolda yetkili komutları kullanmak için
@@ -73,7 +82,6 @@ namespace JavaProject___Server
                         Console.WriteLine("[" + DateTime.Now + "]: /exit - exit server");
                         Console.WriteLine("[" + DateTime.Now + "]: /users - show connected users");
                         Console.WriteLine("[" + DateTime.Now + "]: /clear - clear console");
-                        Console.WriteLine("[" + DateTime.Now + "]: /message [username] [message] - send message to user");
                     }
                     else
                     {
@@ -122,6 +130,7 @@ namespace JavaProject___Server
                 resp.Close();
             }
         }
+
         private static List<Client> convertUidToClient(string clientID)
         {
             List<Client> clients = new List<Client>();
@@ -259,6 +268,17 @@ namespace JavaProject___Server
                 }
             }
         }
+
+        public static void BroadcastAudio(byte[] audioBuffer)
+        {
+            foreach (var audioUser in _audioUsers)
+            {
+                var broadcastAudioPacket = new PacketBuilder();
+                broadcastAudioPacket.WriteAudioMessage(audioBuffer, 0, audioBuffer.Length);
+                audioUser.AudioClientSocket.Client.Send(broadcastAudioPacket.GetPacketBytes());
+            }
+        }
+
         public static void createGroup(string groupName, string clientIDS)
         {
             var packet = new PacketBuilder();
@@ -285,18 +305,17 @@ namespace JavaProject___Server
                     u.ClientSocket.Client.Send(packet.GetPacketBytes());
                 }
             }
-            
-
+        }
+        public static void BroadcastMutedState(string currentColor, string UID)
+        {
+            foreach (var user in _users)
+            {
+                var broadcastPacket = new PacketBuilder();
+                broadcastPacket.WriteOpCode(8);
+                broadcastPacket.WriteMessage(currentColor);
+                broadcastPacket.WriteMessage(UID);
+                user.ClientSocket.Client.Send(broadcastPacket.GetPacketBytes());
+            }
         }
     }
-    // opcode
-    // 0 - register
-    // 1 - login
-    // 2 - send info
-    // 3 - broadcast connection
-    // 4 - broadcast disconnect
-    // 5 - send message
-    // 6 - create group
-    // 7 - delete message
-
 }
