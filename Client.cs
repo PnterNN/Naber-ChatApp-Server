@@ -20,6 +20,9 @@ namespace JavaProject___Server
         public string Password { get; set; }
         public string IPAdress { get; set; }
         public string UID { get; set; }
+
+        public int sendingPacketsPerMinute { get; set; }
+
         public TcpClient ClientSocket { get; set; }
 
         PacketReader _packetReader;
@@ -27,6 +30,14 @@ namespace JavaProject___Server
         //Client giriş yapınca Sunucu clientin UID'sini ve username'ini kaydediyor ve sunucu loguna bilgi düşüyor
         public Client(TcpClient client)
         {
+            _ = Task.Run(() =>
+            {
+                while (true)
+                {
+                    sendingPacketsPerMinute = 0;
+                    System.Threading.Thread.Sleep(60000);
+                }
+            });
 
             //sql bağlandığında uid, mesajları ve username i sql den çekicez 
 
@@ -47,68 +58,84 @@ namespace JavaProject___Server
                     {
                         //opcode 0 ise kullanıcı kayıt oluyor
                         case 0:
-                            Username = _packetReader.ReadMessage();
-                            Email = _packetReader.ReadMessage();
-                            Password = _packetReader.ReadMessage();
-                            Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user tried to sign up, checking information...");
-                            if (sql.CheckRegisterUser(Username, Email))
+                            sendingPacketsPerMinute++;
+                            if (sendingPacketsPerMinute>10)
                             {
-                                Program.SendRegisterInfo(this, false);
-                                Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user already registered, username: " + Username);
+                                Program.SendToManyPackets(this);
                             }
                             else
                             {
-                                UID = Guid.NewGuid().ToString();
-                                Program._users.Add(this);
-                                Program.sendUserInfo(this, Username, UID);
-                                Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user registered, username: " + Username);
-                                sql.InsertUser(Username, UID, Email, Password);
-                                status = true;
-                                Program.SendRegisterInfo(this, true);
-                                
-                                Task.Run(() => Procces(sql));
-                                sql.createUserStorage(this);
+                                Username = _packetReader.ReadMessage();
+                                Email = _packetReader.ReadMessage();
+                                Password = _packetReader.ReadMessage();
+                                Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user tried to sign up, checking information...");
+                                if (sql.CheckRegisterUser(Username, Email))
+                                {
+                                    Program.SendRegisterInfo(this, false);
+                                    Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user already registered, username: " + Username);
+                                }
+                                else
+                                {
+                                    UID = Guid.NewGuid().ToString();
+                                    Program._users.Add(this);
+                                    Program.sendUserInfo(this, Username, UID);
+                                    Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user registered, username: " + Username);
+                                    sql.InsertUser(Username, UID, Email, Password);
+                                    status = true;
+                                    Program.SendRegisterInfo(this, true);
 
-                                Program.sendConnectionInfo(sql);
+                                    Task.Run(() => Procces(sql));
+                                    sql.createUserStorage(this);
 
-                            }
+                                    Program.sendConnectionInfo(sql);
+
+                                }
+                            }  
                             break;
                         //opcode 1 ise kullanıcı giriş yapıyor
                         case 1:
-                            Email = _packetReader.ReadMessage();
-                            Password = _packetReader.ReadMessage();
-                            Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user tried to sign in, checking information...");
-                            if (sql.CheckLoginUser(Email, Password))
+                            sendingPacketsPerMinute++;
+                            if (sendingPacketsPerMinute > 10)
                             {
-                                bool check = false;
-                                foreach (Client c in Program._users)
-                                {
-                                    if (c.Email == Email)
-                                    {
-                                        Program.SendLoginInfo(this, false);
-                                        Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user already logged in, username: " + this.Username);
-                                        check = true;
-                                        break;
-                                    }
-                                }
-                                if (check)
-                                {
-                                    break;
-                                }
-                                Username = sql.getName(Email);
-                                UID = sql.getUID(Email);
-                                Program._users.Add(this);
-                                Program.sendUserInfo(this, Username, UID);
-                                Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user logged in, username: " + this.Username);
-                                status = true;
-                                Program.SendLoginInfo(this, true);
-                                Task.Run(() => Procces(sql));
-                                Program.sendConnectionInfo(sql);
+                                Program.SendToManyPackets(this);
                             }
                             else
                             {
-                                Program.SendLoginInfo(this, false);
-                                Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user unknown account: " + Email);
+                                Email = _packetReader.ReadMessage();
+                                Password = _packetReader.ReadMessage();
+                                Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user tried to sign in, checking information...");
+                                if (sql.CheckLoginUser(Email, Password))
+                                {
+                                    bool check = false;
+                                    foreach (Client c in Program._users)
+                                    {
+                                        if (c.Email == Email)
+                                        {
+                                            Program.SendLoginInfo(this, false);
+                                            Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user already logged in, username: " + this.Username);
+                                            check = true;
+                                            break;
+                                        }
+                                    }
+                                    if (check)
+                                    {
+                                        break;
+                                    }
+                                    Username = sql.getName(Email);
+                                    UID = sql.getUID(Email);
+                                    Program._users.Add(this);
+                                    Program.sendUserInfo(this, Username, UID);
+                                    Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user logged in, username: " + this.Username);
+                                    status = true;
+                                    Program.SendLoginInfo(this, true);
+                                    Task.Run(() => Procces(sql));
+                                    Program.sendConnectionInfo(sql);
+                                }
+                                else
+                                {
+                                    Program.SendLoginInfo(this, false);
+                                    Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user unknown account: " + Email);
+                                }
                             }
                             break;
                        

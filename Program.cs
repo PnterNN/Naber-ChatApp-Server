@@ -16,13 +16,8 @@ namespace JavaProject___Server
     internal class Program
     {
         static TcpListener _listener;
-        static TcpListener _listenerAudio;
         public static List<Client> _users;
-        public static List<AudioClient> _audioUsers;
 
-        private static object locker = new object();
-
-        
 
         //Restfull API için gerekli değişkenler
         static HttpListener _httpListener;
@@ -43,11 +38,9 @@ namespace JavaProject___Server
             //Burda chat sunucusunu başlatıyoruz 9001 portunu kullanıyor
             _users = new List<Client>();
             _listener = new TcpListener(IPAddress.Any, 9001);
-            _listenerAudio = new TcpListener(IPAddress.Any, 9000);
             Console.WriteLine("Starting chat server on *:9001");
             Console.WriteLine("Starting NAudio server on *:9000");
             _listener.Start();
-            _listenerAudio.Start();
             _ = Task.Run(async () =>
             {
                 while (true)
@@ -56,6 +49,9 @@ namespace JavaProject___Server
                     var client = new Client(await entry);
                 }
             });
+
+        
+
             //konsolda yetkili komutları kullanmak için
             _ = Task.Run(() =>
             {
@@ -148,6 +144,12 @@ namespace JavaProject___Server
             return clients;
         }
 
+        public static void SendToManyPackets(Client client)
+        {
+            var packet = new PacketBuilder();
+            packet.WriteOpCode(10);
+            client.ClientSocket.Client.Send(packet.GetPacketBytes());
+        }
         public static void SendRegisterInfo(Client client, bool state)
         {
             var packet = new PacketBuilder();
@@ -268,17 +270,6 @@ namespace JavaProject___Server
                 }
             }
         }
-
-        public static void BroadcastAudio(byte[] audioBuffer)
-        {
-            foreach (var audioUser in _audioUsers)
-            {
-                var broadcastAudioPacket = new PacketBuilder();
-                broadcastAudioPacket.WriteAudioMessage(audioBuffer, 0, audioBuffer.Length);
-                audioUser.AudioClientSocket.Client.Send(broadcastAudioPacket.GetPacketBytes());
-            }
-        }
-
         public static void createGroup(string groupName, string clientIDS)
         {
             var packet = new PacketBuilder();

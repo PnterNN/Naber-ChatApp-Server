@@ -96,7 +96,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AudioClient.cs" />
     <Compile Include="Client.cs" />
     <Compile Include="NET\IO\PacketBuilder.cs" />
     <Compile Include="NET\IO\PacketReader.cs" />
