@@ -9,11 +9,22 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Data.SqlClient;
 using JavaProject___Server.NET.SQL;
+using System.Web.Services.Description;
 
 namespace JavaProject___Server
 {
 
-    public class Client
+    public interface IClient
+    {
+        string Username { get; set; }
+        string Email { get; set; }
+        string Password { get; set; }
+        string IPAdress { get; set; }
+        string UID { get; set; }
+        int sendingPacketsPerMinute { get; set; }
+        TcpClient ClientSocket { get; set; }
+    }
+    public class Client : IClient
     {
         public string Username { get; set; }
         public string Email { get; set; }
@@ -86,9 +97,14 @@ namespace JavaProject___Server
 
                                     Task.Run(() => Procces(sql));
                                     sql.createUserStorage(this);
+                                    sql.createFriendStorage(this);
 
                                     Program.sendConnectionInfo(sql);
-
+                                    Task.Delay(2000).ContinueWith(t =>
+                                    {
+                                        Program.sendTweets(sql, this);
+                                        Program.sendFriends(sql, this);
+                                    });
                                 }
                             }  
                             break;
@@ -130,6 +146,8 @@ namespace JavaProject___Server
                                     Program.SendLoginInfo(this, true);
                                     Task.Run(() => Procces(sql));
                                     Program.sendConnectionInfo(sql);
+                                    Program.sendTweets(sql, this);
+                                    Program.sendFriends(sql, this);
                                 }
                                 else
                                 {
@@ -177,6 +195,7 @@ namespace JavaProject___Server
                             {
                                 firstMessage = "0";
                             }
+                            Console.WriteLine($"[{DateTime.Now}] {this.Username} -> {sql.getName(sql.getMail(contactUID))} : {message}");
                             sql.InsertMessage(this.Username, this.Username, contactUID, "imagelink", message, DateTime.Now.ToString(), firstMessage, messageUID);
                             sql.InsertMessage(sql.getName(sql.getMail(contactUID)), this.Username, this.UID, "imagelink", message, DateTime.Now.ToString(), firstMessage, messageUID);
                             Program.sendMessage(message,contactUID,UID, messageUID);
@@ -210,10 +229,98 @@ namespace JavaProject___Server
                                 Program.deleteMessage(deleteMessageUID, deleteMessageContactUID, this.UID);
                             }
                             break;
+                       
 
                         case 8:
                             var userColor = _packetReader.ReadMessage();
                             Program.BroadcastMutedState(userColor, this.UID);
+                            break;
+                        case 11:
+                            var tweetUID2 = _packetReader.ReadMessage();
+                            Task.Run(() => sql.LikeTweet(tweetUID2, this.UID));
+                            Program.likeTweet(this.UID, tweetUID2);
+                            break;
+                        case 12:
+                            string tweet = _packetReader.ReadMessage();
+                            string tweetUID = _packetReader.ReadMessage();
+                            Console.WriteLine($"[{DateTime.Now}] {this.Username} -> {tweet}");
+                            sql.InsertTweet(this.Username, tweetUID, "imagelink", tweet, " ", DateTime.Now.ToString());
+                            Program.sendTweet(this.Username, tweetUID, tweet);
+                            break;
+                        case 14:
+                            var deleteTweetUID = _packetReader.ReadMessage();
+                            if (sql.checkTweet(this.Username, deleteTweetUID))
+                            {
+                                Task.Run(() => sql.deleteTweet(deleteTweetUID));
+                                Program.deleteTweet(deleteTweetUID);
+                            }
+                            break;
+                        case 15:
+                            var FriendRequestUsername = _packetReader.ReadMessage();
+                            sql.addFriendRequest(this.Username, FriendRequestUsername, true);
+                            sql.addFriendRequest(FriendRequestUsername, this.Username, false);
+                            foreach (Client c in Program._users)
+                            {
+                                if (c.Username == FriendRequestUsername)
+                                {
+                                    Program.sendFriendRequest(c, this.Username);
+                                    break;
+                                }
+                            }
+                            
+                            break;
+                        case 16:
+                            var FriendRequestCancelUsername = _packetReader.ReadMessage();
+                            sql.cancelFriendRequest(this.Username, FriendRequestCancelUsername);
+                            sql.cancelFriendRequest(FriendRequestCancelUsername, this.Username);
+                            foreach (Client c in Program._users)
+                            {
+                                if (c.Username == FriendRequestCancelUsername)
+                                {
+                                    Program.sendFriendRequestCancel(c, this.Username);
+                                    break;
+                                }
+                            }
+                            
+                            break;
+                        case 17:
+                            var FriendRequestAcceptUsername = _packetReader.ReadMessage();
+                            sql.addFriend(this.Username, FriendRequestAcceptUsername);
+                            sql.addFriend(FriendRequestAcceptUsername, this.Username);
+                            foreach (Client c in Program._users)
+                            {
+                                if (c.Username == FriendRequestAcceptUsername)
+                                {
+                                    Program.sendFriendRequestAccept(c, this.Username);
+                                    break;
+                                }
+                            }
+                            break;
+                        case 18:
+                            var FriendRequestDeclineUsername = _packetReader.ReadMessage();
+                            sql.cancelFriendRequest(this.Username, FriendRequestDeclineUsername);
+                            sql.cancelFriendRequest(FriendRequestDeclineUsername, this.Username);
+                            foreach (Client c in Program._users)
+                            {
+                                if (c.Username == FriendRequestDeclineUsername)
+                                {
+                                    Program.sendFriendRequestDecline(c, this.Username);
+                                    break;
+                                }
+                            }
+                            break;
+                        case 19:
+                            var FriendRemoveUsername = _packetReader.ReadMessage();
+                            sql.removeFriend(this.Username, FriendRemoveUsername);
+                            sql.removeFriend(FriendRemoveUsername, this.Username);
+                            foreach (Client c in Program._users)
+                            {
+                                if (c.Username == FriendRemoveUsername)
+                                {
+                                    Program.sendFriendRemove(c, this.Username);
+                                    break;
+                                }
+                            }
                             break;
                         //Eğer yanlış bir opcode gelirse bu hatayı veriyor konsola yazdırıyor
                         default:

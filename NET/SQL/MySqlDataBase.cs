@@ -3,6 +3,7 @@ using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -53,6 +54,73 @@ namespace JavaProject___Server.NET.SQL
             }
         }
 
+        
+        public void removeFriend(string username1, string username2)
+        {
+            using (MySqlConnection conn = GetConnection2())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("DELETE FROM friends_" + username1 + " WHERE Username = @Username", conn);
+                cmd.Parameters.AddWithValue("@Username", username2);
+                cmd.ExecuteNonQuery();
+                conn.Close();
+            }
+        }
+        public void cancelFriendRequest(string username1, string username2)
+        {
+            using (MySqlConnection conn = GetConnection2())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("DELETE FROM friends_" + username1 + " WHERE Username = @Username", conn);
+                cmd.Parameters.AddWithValue("@Username", username2);
+                cmd.ExecuteNonQuery();
+                conn.Close();
+            }
+        }
+        public void addFriend(string username1, string username2)
+        {
+            //change to state
+            using (MySqlConnection conn = GetConnection2())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("UPDATE friends_" + username1 + " SET FriendState = @FriendState WHERE Username = @Username", conn);
+                cmd.Parameters.AddWithValue("@FriendState", true);
+                cmd.Parameters.AddWithValue("@Username", username2);
+                cmd.ExecuteNonQuery();
+                conn.Close();
+            }
+        }
+        public void addFriendRequest(string username1, string username2, bool ownrequest)
+        {
+            using (MySqlConnection conn = GetConnection2())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("INSERT INTO friends_" + username1 + " (Username, OwnRequest, FriendState) VALUES (@Username, @OwnRequest, @FriendState)", conn);
+                cmd.Parameters.AddWithValue("@Username", username2);
+                cmd.Parameters.AddWithValue("@OwnRequest", ownrequest);
+
+                cmd.Parameters.AddWithValue("@FriendState", false);
+                cmd.ExecuteNonQuery();
+                conn.Close();
+            }
+        }
+        public void createFriendStorage(Client client)
+        {
+            using (MySqlConnection conn = GetConnection2())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("CREATE TABLE IF NOT EXISTS friends_" + client.Username + " (Username VARCHAR(255), OwnRequest BOOLEAN, FriendState BOOLEAN)", conn);
+                try
+                {
+                    cmd.ExecuteNonQuery();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+                conn.Close();
+            }
+        }
         public void createUserStorage(Client client)
         {
             using (MySqlConnection conn = GetConnection2())
@@ -69,6 +137,29 @@ namespace JavaProject___Server.NET.SQL
                 }
                 conn.Close();
             }
+        }
+        public bool checkTweet(string username, string tweetUID)
+        {
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("SELECT * FROM tweets WHERE UID = @UID", conn);
+                cmd.Parameters.AddWithValue("@UID", tweetUID);
+                MySqlDataReader reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    if (reader["Username"].ToString() == username)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                conn.Close();
+            }
+            return false;
         }
         public bool checkMessage(string user, string messageUID)
         {
@@ -94,6 +185,18 @@ namespace JavaProject___Server.NET.SQL
             return false;
         }
 
+        public void deleteTweet(string tweetUID)
+        {
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("DELETE FROM tweets WHERE UID = @UID", conn);
+                cmd.Parameters.AddWithValue("@UID", tweetUID);
+                cmd.ExecuteNonQuery();
+                conn.Close();
+            }
+        }
+
         public void deleteMessage(string user, string messageUID)
         {
             using (MySqlConnection conn = GetConnection2())
@@ -106,9 +209,60 @@ namespace JavaProject___Server.NET.SQL
             }
         }
 
+        public void LikeTweet(string UID, string like)
+        {
+            String Like = "";
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("SELECT Likes FROM tweets WHERE UID=@UID", conn);
+                cmd.Parameters.AddWithValue("@UID", UID);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (reader.HasRows)
+                    {
+                        reader.Read();
+                        Like = reader.GetString(0);
+                        conn.Close();
+                    }
+                    else
+                    {
+                        conn.Close();
+                        Like = "";
+                    }
+                }
+            }
+            using(MySqlConnection conn2 = GetConnection())
+            {
+                conn2.Open();
+                MySqlCommand cmd = new MySqlCommand("UPDATE tweets SET Likes=@Likes WHERE UID=@UID", conn2);
+                cmd.Parameters.AddWithValue("@UID", UID);
+                cmd.Parameters.AddWithValue("@Likes", Like + " " + like);
+                cmd.ExecuteNonQuery();
+                conn2.Close();
+            }
+        }
+
+        public void InsertTweet(string username, string UID, string imageSource, string message, string like, string time)
+        {
+            using(MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("INSERT INTO tweets (Username, UID, ImageSource, Message, Likes, Time) VALUES (@Username, @UID, @ImageSource, @Message, @Likes, @Time)", conn);
+                cmd.Parameters.AddWithValue("@Username", username);
+                cmd.Parameters.AddWithValue("@UID", UID);
+                cmd.Parameters.AddWithValue("@ImageSource", imageSource);
+                cmd.Parameters.AddWithValue("@Message", message);
+                cmd.Parameters.AddWithValue("@Likes", like);
+                cmd.Parameters.AddWithValue("@Time", time);
+                cmd.ExecuteNonQuery();
+                conn.Close();
+            }
+        }
+
         public void InsertMessage(string user ,string username, string ContactUID, string imageSource, string message, string time, string fistMessage, string messageUID)
         {
-              using (MySqlConnection conn = GetConnection2())
+            using (MySqlConnection conn = GetConnection2())
             {
                 conn.Open();
                 MySqlCommand cmd = new MySqlCommand("INSERT INTO user_" + user + " (Username, UID, ImageSource, Message, Time, FirstMessage, MessageUID) VALUES (@Username, @UID, @ImageSource, @Message, @Time, @FirstMessage, @MessageUID)", conn);
@@ -121,6 +275,62 @@ namespace JavaProject___Server.NET.SQL
                 cmd.Parameters.AddWithValue("@MessageUID", messageUID);
                 cmd.ExecuteNonQuery();
                 conn.Close();
+            }
+        }
+
+        public Dictionary<int, List<string>> getFriend(string username)
+        {
+            Dictionary<int, List<string>> friends = new Dictionary<int, List<string>>();
+            using (MySqlConnection conn = GetConnection2())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("SELECT * FROM friends_" + username, conn);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (reader.HasRows)
+                    {
+                        List<string> infos;
+                        while (reader.Read())
+                        {
+                            infos = new List<string>();
+                            for (int i = 0; i < 3; i++)
+                            {
+                                infos.Add(reader.GetString(i));
+                            }
+                            friends.Add(friends.Count, infos);
+                        }
+                    }
+                }
+                conn.Close();
+                return friends;
+            }
+        }
+
+        public Dictionary<int, List<string>> getTweets()
+        {
+            Dictionary<int, List<string>> tweets = new Dictionary<int, List<string>>();
+            using (MySqlConnection conn = GetConnection())
+            {
+                conn.Open();
+                MySqlCommand cmd = new MySqlCommand("SELECT * FROM tweets", conn);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (reader.HasRows)
+                    {
+                        List<string> infos;
+                        while (reader.Read())
+                        {
+                            infos = new List<string>();
+                            for (int i = 0; i < 6; i++)
+                            {
+                                infos.Add(reader.GetString(i));
+                            }
+                            tweets.Add(tweets.Count, infos);
+                        }
+                    }
+                }
+                conn.Close();
+                return tweets;
             }
         }
 

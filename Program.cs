@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using MySqlX.XDevAPI;
 using JavaProject___Server.NET.SQL;
 using Microsoft.Win32;
+using System.Security.Cryptography;
 
 namespace JavaProject___Server
 {
@@ -18,23 +19,8 @@ namespace JavaProject___Server
         static TcpListener _listener;
         public static List<Client> _users;
 
-
-        //Restfull API için gerekli değişkenler
-        static HttpListener _httpListener;
-        private static readonly string pageData =
-            "<!DOCTYPE>" +
-            "<html>" +
-            "  <head>" +
-            "    <title>ChatApp RESTFULL API</title>" +
-            "  </head>" +
-            "  <body style=\"font-family:verdana;\">" +
-            "    <p>{{Username: {0},UID: {1}}}</p>" +
-            "  </body>" +
-            "</html>";
-
         public static void Main()
         {
-
             //Burda chat sunucusunu başlatıyoruz 9001 portunu kullanıyor
             _users = new List<Client>();
             _listener = new TcpListener(IPAddress.Any, 9001);
@@ -84,49 +70,12 @@ namespace JavaProject___Server
                         Console.WriteLine("[" + DateTime.Now + "]: Unknown command");
                     }
                 }
-            }); 
-            //Burda Restfull api sunucuyu başlatıyoruz 8000 portunu kullanıyor
-            _httpListener = new HttpListener();
-            _httpListener.Prefixes.Add("http://localhost:8000/");
-            Console.WriteLine("Starting restfull api on *:8000");
-            _httpListener.Start();
-            Task listenTask = HandleIncomingConnections();
-            listenTask.GetAwaiter().GetResult();
-        }
-        //Restfull api için gerekli Bilgileri kullanılan fonksiyon
-        public static async Task HandleIncomingConnections()
-        {
+            });
             while (true)
             {
-                HttpListenerContext ctx = await _httpListener.GetContextAsync();
-                HttpListenerRequest req = ctx.Request;
-                HttpListenerResponse resp = ctx.Response;
-                string username = "NOT FOUND";
-                string uid = "NOT FOUND";
-                foreach (var user in _users)
-                {
-                    if (req.Url.AbsolutePath.ToString() == "/username/" + user.Username)
-                    {
-                        Console.WriteLine(user.Username + " named user sending informations...");
-                        username = user.Username;
-                        uid = user.UID.ToString();
-                    }
-                    if (req.Url.AbsolutePath.ToString() == "/uid/" + user.UID)
-                    {
-                        Console.WriteLine(user.Username + " named user sending informations...");
-                        username = user.Username;
-                        uid = user.UID.ToString();
-                    }
-                }
-                byte[] data = Encoding.UTF8.GetBytes(String.Format(pageData, username, uid));
-                resp.ContentType = "text/html";
-                resp.ContentEncoding = Encoding.UTF8;
-                resp.ContentLength64 = data.LongLength;
-                await resp.OutputStream.WriteAsync(data, 0, data.Length);
-                resp.Close();
+
             }
         }
-
         private static List<Client> convertUidToClient(string clientID)
         {
             List<Client> clients = new List<Client>();
@@ -144,11 +93,65 @@ namespace JavaProject___Server
             return clients;
         }
 
+
+
+        public static void sendFriendRemove(Client client, string username)
+        {
+            var packet = new PacketBuilder();
+            packet.WriteOpCode(19);
+            packet.WriteMessage(username);
+            client.ClientSocket.Client.Send(packet.GetPacketBytes());
+        }
+        public static void sendFriendRequestDecline(Client client, string username)
+        {
+            var packet = new PacketBuilder();
+            packet.WriteOpCode(18);
+            packet.WriteMessage(username);
+            client.ClientSocket.Client.Send(packet.GetPacketBytes());
+        }
+        public static void sendFriendRequestAccept(Client client, string username)
+        {
+            var packet = new PacketBuilder();
+            packet.WriteOpCode(17);
+            packet.WriteMessage(username);
+            client.ClientSocket.Client.Send(packet.GetPacketBytes());
+        }
+        public static void sendFriendRequestCancel(Client client, string username)
+        {
+            var packet = new PacketBuilder();
+            packet.WriteOpCode(16);
+            packet.WriteMessage(username);
+            client.ClientSocket.Client.Send(packet.GetPacketBytes());
+        }
+
+        public static void sendFriendRequest(Client client, string username)
+        {
+            var packet = new PacketBuilder();
+            packet.WriteOpCode(15);
+            packet.WriteMessage(username);
+            client.ClientSocket.Client.Send(packet.GetPacketBytes());
+        }
         public static void SendToManyPackets(Client client)
         {
             var packet = new PacketBuilder();
             packet.WriteOpCode(10);
             client.ClientSocket.Client.Send(packet.GetPacketBytes());
+        }
+
+        public static void SendUsersInfo(Client client)
+        {
+            var packet = new PacketBuilder();
+            packet.WriteOpCode(11);
+            packet.WriteMessage("");
+            client.ClientSocket.Client.Send(packet.GetPacketBytes());
+            foreach (Client user in _users)
+            {
+                var packet2 = new PacketBuilder();
+                packet.WriteOpCode(12);
+                packet2.WriteMessage(user.Username);
+                packet2.WriteMessage(user.UID);
+                client.ClientSocket.Client.Send(packet2.GetPacketBytes());
+            }
         }
         public static void SendRegisterInfo(Client client, bool state)
         {
@@ -170,6 +173,48 @@ namespace JavaProject___Server
             packet.WriteOpCode(2);
             packet.WriteMessage(username);
             packet.WriteMessage(uid);
+            client.ClientSocket.Client.Send(packet.GetPacketBytes());
+        }
+
+        public static void deleteTweet(string tweetUID)
+        {
+            foreach (var user in _users)
+            {
+                var packet = new PacketBuilder();
+                packet.WriteOpCode(14);
+                packet.WriteMessage(tweetUID);
+                user.ClientSocket.Client.Send(packet.GetPacketBytes());
+            }
+                
+        }
+        public static void sendFriends(MySqlDataBase sql, Client client)
+        {
+            Dictionary<int, List<string>> friends = sql.getFriend(client.Username);
+            var packet = new PacketBuilder();
+            packet.WriteOpCode(20);
+            packet.WriteMessage(friends.Values.Count.ToString());
+            foreach (var infos in friends.Values)
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    packet.WriteMessage(infos[i]);
+                }
+            }
+            client.ClientSocket.Client.Send(packet.GetPacketBytes());
+        }
+        public static void sendTweets(MySqlDataBase sql, Client client)
+        {
+            Dictionary<int, List<string>> tweets = sql.getTweets();
+            var packet = new PacketBuilder();
+            packet.WriteOpCode(13);
+            packet.WriteMessage(tweets.Values.Count.ToString());
+            foreach (var infos in tweets.Values)
+            {
+                for (int i = 0; i < 6; i++)
+                {
+                    packet.WriteMessage(infos[i]);
+                }
+            }
             client.ClientSocket.Client.Send(packet.GetPacketBytes());
         }
 
@@ -218,10 +263,48 @@ namespace JavaProject___Server
             var packet = new PacketBuilder();
             packet.WriteOpCode(4);
             packet.WriteMessage(client.UID);
+            try
+            {
+                foreach (var u in _users)
+                {
+
+                    u.ClientSocket.Client.Send(packet.GetPacketBytes());
+
+                }
+            }
+            catch 
+            { 
+
+            }
+            
+        }
+
+        public static void likeTweet(string UID, string tweetUID)
+        {
             foreach (var u in _users)
             {
+                var packet = new PacketBuilder();
+                packet.WriteOpCode(11);
+                packet.WriteMessage(UID);
+
+                packet.WriteMessage(tweetUID);
                 u.ClientSocket.Client.Send(packet.GetPacketBytes());
             }
+        }
+
+        public static void sendTweet(string username, string tweetUID, string tweet)
+        {
+           
+            foreach (var u in _users)
+            {
+                var packet = new PacketBuilder();
+                packet.WriteOpCode(12);
+                packet.WriteMessage(username);
+                packet.WriteMessage(tweet);
+                packet.WriteMessage(tweetUID);
+                u.ClientSocket.Client.Send(packet.GetPacketBytes());
+            }
+
         }
         public static void sendMessage(string msg, string contactUID, string senderUID, string messageUID)
         {
