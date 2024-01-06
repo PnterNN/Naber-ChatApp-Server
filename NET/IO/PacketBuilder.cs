@@ -41,15 +41,13 @@ namespace JavaProject___Server.NET.IO
             //_ms.Write(buff, 0, buff.Length);
             //_ms.Write(Encoding.ASCII.GetBytes(msg), 0, msg.Length);
         }
-        public void WriteAudioMessage(byte[] msg, int startingIndex, int endingIndex)
+        public void WriteAudioMessage(byte[] audio)
         {
             lock (locker)
             {
-                var msgLength = msg.Length;
-
-                _ms.Write(BitConverter.GetBytes(msgLength), 0, BitConverter.GetBytes(msg.Length).Length);
-
-                _ms.Write(msg, 0, msgLength);
+                int audioLength = audio.Length;
+                _ms.Write(BitConverter.GetBytes(audioLength), 0, BitConverter.GetBytes(audioLength).Length);
+                _ms.Write(audio, 0, audioLength);
             }
         }
         public byte[] GetPacketBytes()

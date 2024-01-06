@@ -121,7 +121,7 @@ namespace JavaProject___Server.NET.SQL
                 conn.Close();
             }
         }
-        public void createUserStorage(Client client)
+        public void createUserStorage(Client client) //messeges
         {
             using (MySqlConnection conn = GetConnection2())
             {

@@ -93,6 +93,15 @@ namespace JavaProject___Server
             return clients;
         }
 
+        public static void sendVoiceMessage(byte[] voice, string messageUID, string senderUID, Client client)
+        {
+            var packet = new PacketBuilder();
+            packet.WriteOpCode(22);
+            packet.WriteAudioMessage(voice);
+            packet.WriteMessage(messageUID);
+            packet.WriteMessage(senderUID);
+            client.ClientSocket.Client.Send(packet.GetPacketBytes());
+        }
 
 
         public static void sendFriendRemove(Client client, string username)
@@ -218,6 +227,24 @@ namespace JavaProject___Server
             client.ClientSocket.Client.Send(packet.GetPacketBytes());
         }
 
+        public static void sendRegisterConnectionInfo()
+        {
+            foreach (var user in _users)
+            {
+                foreach (var u in _users)
+                {
+                    if (user.UID != u.UID)
+                    {
+                        var packet = new PacketBuilder();
+                        packet.WriteOpCode(21);
+                        packet.WriteMessage(user.Username);
+                        packet.WriteMessage(user.UID.ToString());
+                        u.ClientSocket.Client.Send(packet.GetPacketBytes());
+                    }
+                }
+            }
+        }
+
         public static void sendConnectionInfo(MySqlDataBase sql)
         {
             foreach (var user in _users)
@@ -253,6 +280,7 @@ namespace JavaProject___Server
                             }
                         }
                         u.ClientSocket.Client.Send(packet.GetPacketBytes());
+                        Console.WriteLine("" + u.Username + " adlı kullanıcıya mesajları gönderildi");
                     }
                 }
             }

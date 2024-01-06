@@ -10,6 +10,11 @@ using System.Threading.Tasks;
 using System.Data.SqlClient;
 using JavaProject___Server.NET.SQL;
 using System.Web.Services.Description;
+using GroovyCodecs.G729;
+using System.IO;
+using NAudio.Wave;
+using NAudio.CoreAudioApi;
+using System.Net.PeerToPeer;
 
 namespace JavaProject___Server
 {
@@ -90,21 +95,22 @@ namespace JavaProject___Server
                                     UID = Guid.NewGuid().ToString();
                                     Program._users.Add(this);
                                     Program.sendUserInfo(this, Username, UID);
-                                    Console.WriteLine("[" + DateTime.Now + "]: [/" + IPAdress + "] user registered, username: " + Username);
                                     sql.InsertUser(Username, UID, Email, Password);
                                     status = true;
                                     Program.SendRegisterInfo(this, true);
 
+
                                     Task.Run(() => Procces(sql));
                                     sql.createUserStorage(this);
                                     sql.createFriendStorage(this);
-
-                                    Program.sendConnectionInfo(sql);
+                                    
                                     Task.Delay(2000).ContinueWith(t =>
                                     {
+                                        Program.sendRegisterConnectionInfo();
                                         Program.sendTweets(sql, this);
                                         Program.sendFriends(sql, this);
                                     });
+                                    break;
                                 }
                             }  
                             break;
@@ -322,6 +328,17 @@ namespace JavaProject___Server
                                 }
                             }
                             break;
+                        case 22:
+                            byte[] audioMessage = _packetReader.ReadAudioMessage();
+                            string audioMessageUID = _packetReader.ReadMessage();
+                            string audioMessageContactUID = _packetReader.ReadMessage();
+
+                            Client audioUser = Program._users.Where(x => x.UID == audioMessageContactUID).FirstOrDefault();
+                            Program.sendVoiceMessage(audioMessage, audioMessageUID, this.UID, audioUser);
+
+
+
+                            break;
                         //Eğer yanlış bir opcode gelirse bu hatayı veriyor konsola yazdırıyor
                         default:
                             Console.WriteLine("[" + DateTime.Now + "]: Unknown opcode: " + opcode);
@@ -338,6 +355,8 @@ namespace JavaProject___Server
                     break;
                 }
             }
+
         }
+
     }
 }
