@@ -18,9 +18,9 @@ namespace JavaProject___Server.NET.SQL
         private readonly string _connectionString3;
         public MySqlDataBase()
         {
-            _connectionString = "Server=46.31.77.173,3306;Database=javaproject;Uid=JavaProject;Pwd=JavaProject_ICU123;";
-            _connectionString2 = "Server=46.31.77.173,3306;Database=javaproject_user;Uid=JavaProject;Pwd=JavaProject_ICU123;";
-            _connectionString3 = "Server=46.31.77.173,3306;Database=javaproject_group;Uid=JavaProject;Pwd=JavaProject_ICU123;";
+            _connectionString = "Server=127.0.0.1,3306;Database=javaproject;Uid=JavaProject;Pwd=JavaProject_ICU123;";//46.31.77.173
+            _connectionString2 = "Server=127.0.0.1,3306;Database=javaproject_user;Uid=JavaProject;Pwd=JavaProject_ICU123;";
+            _connectionString3 = "Server=127.0.0.1,3306;Database=javaproject_group;Uid=JavaProject;Pwd=JavaProject_ICU123;";
         }
         protected MySqlConnection GetConnection()
         {
@@ -126,7 +126,7 @@ namespace JavaProject___Server.NET.SQL
             using (MySqlConnection conn = GetConnection2())
             {
                 conn.Open();
-                MySqlCommand cmd = new MySqlCommand("CREATE TABLE IF NOT EXISTS user_" + client.Username + " (Username VARCHAR(255), UID VARCHAR(36), ImageSource VARCHAR(255), Message VARCHAR(1000), Time VARCHAR(255), FirstMessage BOOLEAN, MessageUID VARCHAR(255))", conn);
+                MySqlCommand cmd = new MySqlCommand("CREATE TABLE IF NOT EXISTS user_" + client.Username + " (Username VARCHAR(255), UID VARCHAR(36), ImageSource VARCHAR(255), Message VARCHAR(1000), Voice TEXT, Time VARCHAR(255), FirstMessage BOOLEAN, MessageUID VARCHAR(255))", conn);
                 try
                 {
                     cmd.ExecuteNonQuery();
@@ -260,16 +260,17 @@ namespace JavaProject___Server.NET.SQL
             }
         }
 
-        public void InsertMessage(string user ,string username, string ContactUID, string imageSource, string message, string time, string fistMessage, string messageUID)
+        public void InsertMessage(string user ,string username, string ContactUID, string imageSource, string message, string voice, string time, string fistMessage, string messageUID)
         {
             using (MySqlConnection conn = GetConnection2())
             {
                 conn.Open();
-                MySqlCommand cmd = new MySqlCommand("INSERT INTO user_" + user + " (Username, UID, ImageSource, Message, Time, FirstMessage, MessageUID) VALUES (@Username, @UID, @ImageSource, @Message, @Time, @FirstMessage, @MessageUID)", conn);
+                MySqlCommand cmd = new MySqlCommand("INSERT INTO user_" + user + " (Username, UID, ImageSource, Message, Voice, Time, FirstMessage, MessageUID) VALUES (@Username, @UID, @ImageSource, @Message, @Voice, @Time, @FirstMessage, @MessageUID)", conn);
                 cmd.Parameters.AddWithValue("@Username", username);
                 cmd.Parameters.AddWithValue("@UID", ContactUID);
                 cmd.Parameters.AddWithValue("@ImageSource", imageSource);
                 cmd.Parameters.AddWithValue("@Message", message);
+                cmd.Parameters.AddWithValue("@Voice", voice);
                 cmd.Parameters.AddWithValue("@Time", time);
                 cmd.Parameters.AddWithValue("@FirstMessage", fistMessage);
                 cmd.Parameters.AddWithValue("@MessageUID", messageUID);
@@ -350,8 +351,9 @@ namespace JavaProject___Server.NET.SQL
                         while (reader.Read())
                         {
                             infos = new List<string>();
-                            for(int i = 0; i < 7; i++)
+                            for(int i = 0; i < 8; i++)
                             {
+
                                 infos.Add(reader.GetString(i));
                             }
                             messages.Add(messages.Count, infos);

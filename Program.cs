@@ -11,6 +11,10 @@ using MySqlX.XDevAPI;
 using JavaProject___Server.NET.SQL;
 using Microsoft.Win32;
 using System.Security.Cryptography;
+using GroovyCodecs.G729;
+using System.IO;
+using NAudio.CoreAudioApi;
+using NAudio.Wave;
 
 namespace JavaProject___Server
 {
@@ -273,8 +277,9 @@ namespace JavaProject___Server
                         {
                             if (message[1] == user.UID.ToString())
                             {
-                                for (int i = 0; i < 7; i++)
+                                for (int i = 0; i < 8; i++)
                                 {
+                                    Console.WriteLine(i + " " + message[i]);
                                     packet.WriteMessage(message[i]);
                                 }
                             }

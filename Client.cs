@@ -202,8 +202,8 @@ namespace JavaProject___Server
                                 firstMessage = "0";
                             }
                             Console.WriteLine($"[{DateTime.Now}] {this.Username} -> {sql.getName(sql.getMail(contactUID))} : {message}");
-                            sql.InsertMessage(this.Username, this.Username, contactUID, "imagelink", message, DateTime.Now.ToString(), firstMessage, messageUID);
-                            sql.InsertMessage(sql.getName(sql.getMail(contactUID)), this.Username, this.UID, "imagelink", message, DateTime.Now.ToString(), firstMessage, messageUID);
+                            sql.InsertMessage(this.Username, this.Username, contactUID, "imagelink", message, "0", DateTime.Now.ToString(), firstMessage, messageUID);
+                            sql.InsertMessage(sql.getName(sql.getMail(contactUID)), this.Username, this.UID, "imagelink", message, "0", DateTime.Now.ToString(), firstMessage, messageUID);
                             Program.sendMessage(message,contactUID,UID, messageUID);
                             break;
                         case 6:
@@ -332,6 +332,15 @@ namespace JavaProject___Server
                             byte[] audioMessage = _packetReader.ReadAudioMessage();
                             string audioMessageUID = _packetReader.ReadMessage();
                             string audioMessageContactUID = _packetReader.ReadMessage();
+
+                            string sesdos = "";
+                            for (long sayac = 0; sayac < audioMessage.Length; sayac++)
+                            {
+                                sesdos = sesdos + audioMessage[sayac].ToString() + ",";
+                            }
+
+                            sql.InsertMessage(this.Username, this.Username, audioMessageContactUID, "imagelink", "0", sesdos, DateTime.Now.ToString(), "True", audioMessageUID);
+                            sql.InsertMessage(sql.getName(sql.getMail(audioMessageContactUID)), this.Username, this.UID, "imagelink", "0", sesdos, DateTime.Now.ToString(), "True", audioMessageUID);
 
                             Client audioUser = Program._users.Where(x => x.UID == audioMessageContactUID).FirstOrDefault();
                             Program.sendVoiceMessage(audioMessage, audioMessageUID, this.UID, audioUser);

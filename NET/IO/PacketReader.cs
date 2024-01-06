@@ -38,6 +38,7 @@ namespace JavaProject___Server.NET.IO
             return copiedBuffer;
         }
 
+
         public byte[] ReadScreenPicture()
         {
             byte[] msgBuffer;
