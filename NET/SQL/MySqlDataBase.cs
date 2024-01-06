@@ -353,7 +353,6 @@ namespace JavaProject___Server.NET.SQL
                             infos = new List<string>();
                             for(int i = 0; i < 8; i++)
                             {
-
                                 infos.Add(reader.GetString(i));
                             }
                             messages.Add(messages.Count, infos);
