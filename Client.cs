@@ -201,7 +201,7 @@ namespace JavaProject___Server
                             {
                                 firstMessage = "0";
                             }
-                            Console.WriteLine($"[{DateTime.Now}] {this.Username} -> {sql.getName(sql.getMail(contactUID))} : {message}");
+
                             sql.InsertMessage(this.Username, this.Username, contactUID, "imagelink", message, "0", DateTime.Now.ToString(), firstMessage, messageUID);
                             sql.InsertMessage(sql.getName(sql.getMail(contactUID)), this.Username, this.UID, "imagelink", message, "0", DateTime.Now.ToString(), firstMessage, messageUID);
                             Program.sendMessage(message,contactUID,UID, messageUID);
@@ -249,7 +249,6 @@ namespace JavaProject___Server
                         case 12:
                             string tweet = _packetReader.ReadMessage();
                             string tweetUID = _packetReader.ReadMessage();
-                            Console.WriteLine($"[{DateTime.Now}] {this.Username} -> {tweet}");
                             sql.InsertTweet(this.Username, tweetUID, "imagelink", tweet, " ", DateTime.Now.ToString());
                             Program.sendTweet(this.Username, tweetUID, tweet);
                             break;
@@ -344,8 +343,6 @@ namespace JavaProject___Server
 
                             Client audioUser = Program._users.Where(x => x.UID == audioMessageContactUID).FirstOrDefault();
                             Program.sendVoiceMessage(audioMessage, audioMessageUID, this.UID, audioUser);
-
-
 
                             break;
                         //Eğer yanlış bir opcode gelirse bu hatayı veriyor konsola yazdırıyor

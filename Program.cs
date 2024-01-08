@@ -7,7 +7,6 @@ using System.Text;
 
 using System.Net.Sockets;
 using System.Threading.Tasks;
-using MySqlX.XDevAPI;
 using JavaProject___Server.NET.SQL;
 using Microsoft.Win32;
 using System.Security.Cryptography;
@@ -40,7 +39,7 @@ namespace JavaProject___Server
                 }
             });
 
-        
+
 
             //konsolda yetkili komutları kullanmak için
             _ = Task.Run(() =>
@@ -56,8 +55,32 @@ namespace JavaProject___Server
                     {
                         foreach (var user in _users)
                         {
-                            Console.WriteLine("[" + DateTime.Now + "]: "+ user.Username + "[/"+ user.IPAdress +"] named user uid is " + user.UID);
+                            Console.WriteLine("[" + DateTime.Now + "]: " + user.Username + "[/" + user.IPAdress + "] named user uid is " + user.UID);
                         }
+                    }
+                    else if (args[0] == "/kick")
+                    {
+                        bool status = false;
+                        if (args.Length > 1)
+                        {
+                            foreach (var user in _users)
+                            {
+                                if (args[1] == user.Username || args[1] == user.UID || args[1] == user.IPAdress)
+                                {
+                                    status = true;
+                                    kickUser(user);
+                                    Console.WriteLine("[" + DateTime.Now + "]: " + user.Username + " kicked from server");
+                                }
+                            }
+                            if (status == false)
+                            {
+
+                                Console.WriteLine("[" + DateTime.Now + "]: " + args[1] + " not found");
+
+
+                            }
+                        }
+                        
                     }
                     else if (args[0] == "/clear")
                     {
@@ -68,6 +91,7 @@ namespace JavaProject___Server
                         Console.WriteLine("[" + DateTime.Now + "]: /exit - exit server");
                         Console.WriteLine("[" + DateTime.Now + "]: /users - show connected users");
                         Console.WriteLine("[" + DateTime.Now + "]: /clear - clear console");
+                        Console.WriteLine("[" + DateTime.Now + "]: /kick [username/UID/IPAdress] - kick user");
                     }
                     else
                     {
@@ -95,6 +119,13 @@ namespace JavaProject___Server
                 }
             }
             return clients;
+        }
+
+        public static void kickUser(Client client)
+        {
+            var packet = new PacketBuilder();
+            packet.WriteOpCode(23);
+            client.ClientSocket.Client.Send(packet.GetPacketBytes());
         }
 
         public static void sendVoiceMessage(byte[] voice, string messageUID, string senderUID, Client client)
@@ -284,7 +315,6 @@ namespace JavaProject___Server
                             }
                         }
                         u.ClientSocket.Client.Send(packet.GetPacketBytes());
-                        Console.WriteLine("" + u.Username + " adlı kullanıcıya mesajları gönderildi");
                     }
                 }
             }
